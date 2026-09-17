@@ -8,6 +8,7 @@ tsheet 形式の参照実装。仕様が正で、実装は仕様に従う。計�
 pnpm install
 pnpm check        # lint → typecheck → test。PR の前に必ず通す
 pnpm lint | pnpm typecheck | pnpm test
+pnpm test:browser # tsheet-core のテストを Chromium・Firefox・WebKit で実行（初回は pnpm browsers:install）
 pnpm vitest run --project tsheet-core   # パッケージ単位（tsheet-core / tsheet-cli / witree / repo）
 ```
 
@@ -25,4 +26,5 @@ pnpm vitest run --project tsheet-core   # パッケージ単位（tsheet-core / 
 - テストは各パッケージの `test/` に置く（`src/` には置かない）。診断コード（S / D / V / E 系）は、発生するケースと発生しないケースの両方をテストする。
 - ESM のみ。相対 import は `.ts` 拡張子付き。enum・namespace など実行時コードを生む TypeScript 構文は使わない（`erasableSyntaxOnly`）。
 - 改行は LF。コメント・テスト名・コミットメッセージの本文は日本語でよい。
+- CI（`.github/workflows/ci.yml`）の `check` と `test-browser` が通らない PR は main にマージできない。tsheet-core のテストは Node とブラウザの両方で実行されるので、テストコードでも Node 専用の API（`node:fs` など）を使わない。ファイルが必要なテストデータは import できる形で用意する。
 - 1 Issue = 1 ブランチ = 1 PR。PR の本文に `Closes #番号` を書く。Issue の完了条件をすべて満たしてから PR を出す。

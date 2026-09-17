@@ -30,7 +30,7 @@ export default defineConfig(
     languageOptions: {
       parserOptions: {
         projectService: {
-          allowDefaultProject: ["engine/*.ts", "packages/*/vitest.config.ts", "apps/*/vitest.config.ts"],
+          allowDefaultProject: ["engine/*.ts", "packages/*/vitest.config.ts", "packages/*/vitest.browser.config.ts", "apps/*/vitest.config.ts"],
         },
         tsconfigRootDir: import.meta.dirname,
       },
@@ -51,7 +51,7 @@ export default defineConfig(
     },
   },
   {
-    files: ["eslint.config.js", "**/vitest.config.ts", "test/**/*.ts", "packages/tsheet-cli/**/*.ts"],
+    files: ["eslint.config.js", "**/vitest.*config.ts", "test/**/*.ts", "packages/tsheet-cli/**/*.ts"],
     languageOptions: { globals: globals.node },
   },
   {

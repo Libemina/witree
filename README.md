@@ -120,6 +120,9 @@ Node.js 22 以上と pnpm 10 が必要です（`corepack enable` で pnpm の版
 ```sh
 pnpm install
 pnpm check    # lint → typecheck → test
+
+pnpm browsers:install   # 初回のみ（Playwright のブラウザ）
+pnpm test:browser       # tsheet-core のテストを Chromium・Firefox・WebKit で実行
 ```
 
 開発ツールの選定理由は [docs/adr/0001-toolchain.md](docs/adr/0001-toolchain.md) に、開発時の規約は [CLAUDE.md](CLAUDE.md) に記載しています。

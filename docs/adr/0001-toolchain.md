@@ -2,7 +2,7 @@
 
 - ステータス：採用
 - 日付：2026-09-18
-- 関連 Issue：#8（P-08）、#9（P-09）、#10（P-10）
+- 関連 Issue：#8（P-08）、#9（P-09）、#10（P-10）、#11（P-11）
 
 ## 背景
 
@@ -17,7 +17,7 @@ tsheet-core・tsheet-cli・witree を 1 つのリポジトリで開発する。�
 | 言語 | TypeScript 6.0 系（`~6.0.x` で固定）、`strict` に加えて `noUncheckedIndexedAccess`・`exactOptionalPropertyTypes` など | 「未設定」と `null` の区別（本体仕様 §7）を型で守るため。7.x は typescript-eslint が未対応（対応範囲は `<6.1.0`）のため見送り、対応後に上げる |
 | モジュール | ESM のみ。`module: NodeNext`、相対 import は `.ts` 拡張子付き、`erasableSyntaxOnly`・`verbatimModuleSyntax` | Node.js の型除去、Vite、Vitest のいずれでもビルドなしで動く |
 | パッケージ間の参照 | `exports` がソース（`./src/index.ts`）を直接指す。ビルド手順は設けない | 開発中は Vite と Vitest がソースを直接扱える。配布用のビルドは CLI を公開する時点（C-02 以降）で決める |
-| テスト | Vitest。ルートの `vitest.config.ts` が各パッケージを projects として束ねる。ブラウザモード（Playwright）は CI の整備（P-11）とゴールデンテスト（L-11）で追加する | Node とブラウザで同じテストを実行できる |
+| テスト | Vitest。ルートの `vitest.config.ts` が各パッケージを projects として束ねる。tsheet-core のテストは、ブラウザモード（Playwright）で Chromium・Firefox・WebKit でも実行する（`pnpm test:browser`） | Node とブラウザで同じテストを実行できる。3 つのブラウザは JavaScript エンジン（V8・SpiderMonkey・JavaScriptCore）の違いを確認するため。Tauri は Windows で Chromium 系、macOS / Linux で WebKit 系の WebView を使う |
 | lint | ESLint（flat config）＋ typescript-eslint の `strictTypeChecked`・`stylisticTypeChecked` | 型情報を使う規則（Promise の放置など）を有効にするため |
 | JSON Schema 検証 | Ajv の standalone コード生成（L-03 で導入） | 実行時に `new Function` を使わず、Tauri の CSP と両立する |
 | フォーマッタ | 導入しない（`.editorconfig` と ESLint のみ） | 必要になった時点で再検討する |
@@ -32,6 +32,12 @@ tsheet-core・tsheet-cli・witree を 1 つのリポジトリで開発する。�
 - vitest の型定義が Node の型を持ち込むため、テストは `test/` に置き、`test/tsconfig.json` で別に検査する（`src/` にテストを置かない）。
 - ESLint で `Date`、`Math.random`、`Intl`、`setTimeout` / `setInterval` / `setImmediate` / `queueMicrotask`、`performance`、`crypto`、`globalThis`、`localeCompare`、`toLocale*` を `packages/tsheet-core/src/` に限って禁止する。
 - 上記が実際に失敗することを `test/determinism-guard.test.ts` で確認する。
+
+### CI（P-11）
+
+- GitHub Actions の `check`（lint・typecheck・Node でのテスト）と `test-browser`（ブラウザでのテスト）を、main のルールセットの必須ステータスチェックにする。
+- ワークフローの `permissions` は `contents: read` を既定とし、アクションはコミット SHA で固定する。
+- リポジトリの Actions の設定で GitHub 製のアクションだけを許可する。pnpm は corepack で用意する（Node.js 25 以降は corepack が同梱されないため、Node.js を上げるときに見直す）。
 
 ## 影響
 
