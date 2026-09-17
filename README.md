@@ -107,9 +107,22 @@ spec/        仕様書（形式・View・エンジン API）
 meta/        JSON Schema（Draft 2020-12）
 engine/      エンジン API の型定義（契約）
 examples/    サンプルワークブック
-packages/    tsheet-core, tsheet-cli（予定）
-apps/        witree（Web / デスクトップ、予定）
+packages/    tsheet-core, tsheet-cli
+apps/        witree（Web / デスクトップ）
+docs/        計画（plan/）と設計判断の記録（adr/）
+test/        リポジトリ全体に対するテスト
 ```
+
+## 開発
+
+Node.js 22 以上と pnpm 10 が必要です（`corepack enable` で pnpm の版が揃います）。
+
+```sh
+pnpm install
+pnpm check    # lint → typecheck → test
+```
+
+開発ツールの選定理由は [docs/adr/0001-toolchain.md](docs/adr/0001-toolchain.md) に、開発時の規約は [CLAUDE.md](CLAUDE.md) に記載しています。
 
 ## ドキュメント
 

@@ -1,0 +1,14 @@
+{
+  "name": "tsheet-core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "tsheet エンジン（検証・計算・変更・射影・マージ）。純粋 TypeScript で、I/O・時計・乱数・ロケールを持たない",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p . && tsc --noEmit -p test"
+  }
+}
