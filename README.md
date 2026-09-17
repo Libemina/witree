@@ -158,6 +158,8 @@ MVP では次を扱いません：xlsx の入出力（Power Query で代替）�
 
 仕様がドラフトの段階のため、まずは Issue で提案や質問をお寄せください。設計判断の多くは仕様書に理由とともに記載しています。
 
+脆弱性は公開の Issue ではなく、[SECURITY.md](SECURITY.md) に記載の窓口（Private vulnerability reporting）から報告してください。
+
 ## ライセンス
 
 未定（決定後に追記します）。
