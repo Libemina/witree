@@ -9,15 +9,19 @@
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p . && pnpm -r run typecheck",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "check": "pnpm lint && pnpm typecheck && pnpm test"
+    "test": "vitest run \"--project=!*:browser\"",
+    "test:watch": "vitest \"--project=!*:browser\"",
+    "check": "pnpm lint && pnpm typecheck && pnpm test",
+    "test:browser": "vitest run \"--project=*:browser\"",
+    "browsers:install": "playwright install chromium firefox webkit"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^22.20.3",
+    "@vitest/browser-playwright": "^5.0.1",
     "eslint": "^10.10.0",
     "globals": "^17.12.0",
+    "playwright": "^1.63.0",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.70.0",
     "vitest": "^5.0.1"
