@@ -28,6 +28,8 @@ CLI（Node）  ──直接呼び出し──▶  tsheet-core          ◀──
 | メンバー | 内容 |
 |---|---|
 | `clock.today()` / `clock.timezone` | `TODAY()` の基準。`settings.timezone` があればそちらを優先する |
+| `clock.now()` | 現在時刻。RFC 3339、UTC、秒精度、末尾は `Z` 固定（例：`2026-01-31T12:34:56Z`）。`NOW()`（本体仕様 §10.3）と、システム項目 `created` / `updated`（本体仕様 §11.2）に使う |
+| `actor?` | 利用者の識別子（任意）。`createdBy` / `updatedBy` に書く。未設定なら書かない。`settings.privacy.recordActors` が `false` のときも書かない（本体仕様 §2.5、§11.2）。認証・検証はしない |
 | `ids.newId()` | UUIDv4。エンジンは自動生成する Op（削除に伴う参照解除など）で使う |
 | `hash(bytes)` | 同期のハッシュ関数。`contentHash()` と外部変更検出に使う。アルゴリズムは Host が選ぶが、同じワークブックを扱う Host 間で揃える（推奨 SHA-256） |
 | `log?` | 診断のログ出力先 |

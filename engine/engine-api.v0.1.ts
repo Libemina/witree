@@ -34,7 +34,12 @@ export type Result<T> =
 // Host（実行環境から注入するもの。エンジンは I/O・時計・乱数を自前で持たない）
 // ---------------------------------------------------------------------------
 export interface Host {
-  clock: { today(): string; timezone: string };   // "YYYY-MM-DD", IANA 名
+  clock: {
+    today(): string;                               // "YYYY-MM-DD"（timezone での今日）
+    now(): string;                                 // 現在時刻。RFC 3339、UTC、秒精度、`Z` 固定（"2026-01-31T12:34:56Z"）
+    timezone: string;                              // IANA 名
+  };
+  actor?: string;                                  // 利用者の識別子。未設定なら createdBy / updatedBy を書かない（本体仕様 §11.2）
   ids: { newId(): NodeId };
   hash(bytes: Uint8Array): string;                 // 同期。内容ハッシュ（外部変更検出・ゴールデンテスト用）
   log?(d: Diagnostic): void;
