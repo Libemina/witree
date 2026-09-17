@@ -142,7 +142,7 @@ Office の「保存時にファイルのプロパティから個人情報を削�
 
 | 値 | 動作 |
 |---|---|
-| `true`（既定） | `create` と変更のたびに、Host から与えられた識別子を `createdBy` / `updatedBy` に書く。識別子が未設定なら書かない |
+| `true`（既定） | `create` と変更のたびに、Host から与えられた識別子（`Host.actor`）を `createdBy` / `updatedBy` に書く。識別子が未設定なら書かない |
 | `false` | 識別子を一切書かない。読み込んだレコードに `createdBy` / `updatedBy` が残っていれば、正規化（§11.1）の一部として **保存時に除去** する（読み込み時に D23 で通知） |
 
 - `created` / `updated`（日時）はこの設定の対象外である。日時は個人を特定しないため、履歴や順序の用途で残す。
@@ -432,7 +432,7 @@ string   = '"' { char | '""' } '"' ;          (* "" で " を表す *)
 | 文字列比較 | 比較演算子・`min`/`max`・`unique`・正規化（§11.1）における文字列の順序は **Unicode コードポイント順** とする。`Intl.Collator` などロケール依存の照合を使ってはならない。ロケールに応じた並び（五十音順など）は View 側の表示時ソートで行い、エンジンの決定的な順序とは分ける。 |
 | 大文字小文字 | `=` 比較は大文字小文字を区別する。`UPPER`/`LOWER` は Unicode の単純ケース変換（ロケール非依存）とする。 |
 | 日付 | 先発グレゴリオ暦。`date` は文字列のまま扱い、実行環境の `Date` やタイムゾーンに依存しない自前の実装で演算する。`DAYS(end, start)` は `end − start` の日数（負数可）。`date` と `datetime` の混在演算・比較は S07 とする。`datetime` の比較は UTC に換算して行う。 |
-| `TODAY()` / `NOW()` | ホストから与えられた「今日」の `YYYY-MM-DD`（タイムゾーンは `settings.timezone` またはホストの値）と、現在時刻（UTC の datetime）を使う。ワークブック内の全ノードで同じ値になる。 |
+| `TODAY()` / `NOW()` | ホストから与えられた「今日」の `YYYY-MM-DD`（`Host.clock.today()`。タイムゾーンは `settings.timezone` またはホストの値）と、現在時刻（`Host.clock.now()`。UTC、秒精度の datetime）を使う。ワークブック内の全ノードで同じ値になる。 |
 | decimal | 整数演算（BigInt 相当）による固定小数点で実装する。加減乗は正確に、除算はフィールドの `scale` に **四捨五入（half-up）** で丸める。`avg`・`wavg` も同様。 |
 | number | IEEE 754 倍精度。表示・保存は JSON の最短表現（§11.1）。 |
 
@@ -489,9 +489,9 @@ string   = '"' { char | '""' } '"' ;          (* "" で " を表す *)
 
 | 項目 | 内容 | 書き込む時点 |
 |---|---|---|
-| `created` | 作成日時。RFC 3339、UTC（`2026-09-17T09:12:33Z`）、秒精度 | `create` 時（Host の時計） |
-| `updated` | 最終更新日時。同上。省略時は `created` と同じとみなす | 値の変更（`set` / `unset` / `setDoc`）、`move`、Undo/Redo、スキーマ変更に伴う書き換え |
-| `createdBy` / `updatedBy` | 利用者の識別子。Git の `user.email` と同じ位置づけで、Host が設定値を渡す。認証・検証はしない | `created` / `updated` と同時 |
+| `created` | 作成日時。RFC 3339、UTC（`2026-09-17T09:12:33Z`）、秒精度 | `create` 時（Host の時計 `Host.clock.now()`） |
+| `updated` | 最終更新日時。同上（Host の時計）。省略時は `created` と同じとみなす | 値の変更（`set` / `unset` / `setDoc`）、`move`、Undo/Redo、スキーマ変更に伴う書き換え |
+| `createdBy` / `updatedBy` | 利用者の識別子。Git の `user.email` と同じ位置づけで、Host が設定値を渡す（`Host.actor`。任意）。認証・検証はしない | `created` / `updated` と同時 |
 
 - UTC 固定にするのは、端末のタイムゾーンで表記が揺れて差分に混ざるのを防ぐためである。表示時のローカル時刻への変換は View の `format` で行う。
 - 子の追加・削除は親の `updated` を変えない（ロールアップの再計算は変更ではない）。marks・View の変更もデータの変更ではないため対象外。
