@@ -1,0 +1,23 @@
+# 依存・ビルド成果物
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Tauri（Rust）
+target/
+
+# ワークブックの個人状態（本体仕様 §2.1、View 仕様 §11）
+.tsheet-local/
+
+# 環境・エディタ・OS
+.env
+.env.*
+!.env.example
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,41 @@
+{
+  "$schema": "../../../meta/view.v0.1.json",
+  "specVersion": "0.1",
+  "name": "quarterly",
+  "title": "四半期集計",
+  "mode": "crosstab",
+  "tree": {
+    "types": [
+      "Category",
+      "Account"
+    ],
+    "expandDepth": "all"
+  },
+  "columns": [
+    {
+      "field": "$title",
+      "width": 220,
+      "pinned": true
+    }
+  ],
+  "crosstab": {
+    "sourceType": "Entry",
+    "key": "period",
+    "keys": {
+      "from": "2026-04",
+      "to": "2027-03",
+      "step": "quarter"
+    },
+    "keyLabel": "FYQ",
+    "value": "amount",
+    "fn": "sum",
+    "columnWidth": 110,
+    "format": {
+      "thousands": true,
+      "unit": "none"
+    },
+    "rowTotal": true,
+    "columnTotal": true,
+    "editable": false
+  }
+}

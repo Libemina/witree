@@ -1,0 +1,27 @@
+{
+  "$schema": "../../../meta/view.v0.1.json",
+  "specVersion": "0.1",
+  "name": "device",
+  "title": "機器詳細",
+  "mode": "treePanel",
+  "tree": { "types": ["Site", "Device"], "expandDepth": "all" },
+  "columns": [
+    { "field": "$title", "width": 240 }
+  ],
+  "panel": {
+    "width": 720,
+    "types": {
+      "Interface": {
+        "columns": [
+          { "field": "port", "width": 110 },
+          { "field": "description", "width": 200 },
+          { "field": "mode", "width": 90 },
+          { "field": "speed", "width": 70 },
+          { "field": "enabled", "width": 60, "format": { "boolean": "checkbox" } },
+          { "field": "uplink", "width": 200 },
+          { "field": "vlanCount", "width": 60, "align": "end" }
+        ]
+      }
+    }
+  }
+}

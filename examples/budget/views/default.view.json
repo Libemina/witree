@@ -1,0 +1,85 @@
+{
+  "$schema": "../../../meta/view.v0.1.json",
+  "specVersion": "0.1",
+  "name": "default",
+  "title": "月次予算",
+  "mode": "crosstab",
+  "tree": {
+    "types": [
+      "Category",
+      "Account"
+    ],
+    "expandDepth": "all"
+  },
+  "columns": [
+    {
+      "field": "$title",
+      "label": "科目",
+      "width": 220,
+      "pinned": true
+    },
+    {
+      "field": "Account.owner",
+      "label": "担当",
+      "width": 90
+    },
+    {
+      "field": "Account.total",
+      "labelExpr": "\"FY\" & root.fiscalYear & \" 合計\"",
+      "width": 120,
+      "format": {
+        "thousands": true
+      }
+    }
+  ],
+  "crosstab": {
+    "sourceType": "Entry",
+    "key": "period",
+    "keys": {
+      "from": "2026-04",
+      "to": "2027-03",
+      "step": "month"
+    },
+    "keyLabel": "M月",
+    "value": "amount",
+    "fn": "sum",
+    "columnWidth": 96,
+    "format": {
+      "thousands": true,
+      "unit": "none"
+    },
+    "rowTotal": true,
+    "columnTotal": true
+  },
+  "rules": [
+    {
+      "id": "negative",
+      "types": [
+        "Entry"
+      ],
+      "when": "amount < 0",
+      "target": "cell",
+      "fields": [
+        "amount"
+      ],
+      "style": {
+        "fg": "red"
+      }
+    },
+    {
+      "id": "pastEmpty",
+      "description": "当月以前で未入力のセル",
+      "types": [
+        "Entry"
+      ],
+      "when": "AND(period <= root.currentMonth, ISBLANK(amount))",
+      "target": "cell",
+      "fields": [
+        "amount"
+      ],
+      "style": {
+        "bg": "yellow"
+      }
+    }
+  ]
+}

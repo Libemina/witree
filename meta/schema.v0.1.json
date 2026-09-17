@@ -1,0 +1,687 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:tsheet:meta:schema:0.1",
+  "title": "tsheet形式スキーマ定義 v0.1",
+  "description": "schema.json の構造検証用。参照解決・型整合・循環などの意味検証は仕様書 §12 の S 系診断で行う。",
+  "type": "object",
+  "required": [
+    "specVersion",
+    "schemaVersion",
+    "root",
+    "types"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "specVersion": {
+      "const": "0.1"
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "enums": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/identifier"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/enumValues"
+      }
+    },
+    "root": {
+      "type": "object",
+      "required": [
+        "children"
+      ],
+      "properties": {
+        "children": {
+          "$ref": "#/$defs/childRules"
+        },
+        "fields": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/identifier"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/fieldDef"
+          },
+          "description": "ワークブック全体の設定値（ルートノードのフィールド）。値は workbook.json の params に置く。inherit は指定不可（意味検証 S13）"
+        }
+      },
+      "additionalProperties": false
+    },
+    "types": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+        "$ref": "#/$defs/typeName"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/typeDef"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "identifier": {
+      "description": "フィールドID・列挙ID・チェックID。小文字始まり。予約語 parent / root は意味検証で禁止。",
+      "type": "string",
+      "pattern": "^[a-z][A-Za-z0-9_]{0,63}$"
+    },
+    "typeName": {
+      "description": "型名。大文字始まり。",
+      "type": "string",
+      "pattern": "^[A-Z][A-Za-z0-9_]{0,63}$"
+    },
+    "expression": {
+      "description": "式言語（仕様書 §10）の式。",
+      "type": "string",
+      "minLength": 1
+    },
+    "decimalString": {
+      "type": "string",
+      "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+    },
+    "childRules": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+        "$ref": "#/$defs/typeName"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/childRule"
+      }
+    },
+    "childRule": {
+      "type": "object",
+      "required": [
+        "cardinality"
+      ],
+      "properties": {
+        "cardinality": {
+          "enum": [
+            "one",
+            "many"
+          ]
+        },
+        "required": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "typeDef": {
+      "type": "object",
+      "required": [
+        "fields"
+      ],
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "titleTemplate": {
+          "type": "string"
+        },
+        "fields": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/identifier"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/fieldDef"
+          }
+        },
+        "children": {
+          "$ref": "#/$defs/childRules"
+        },
+        "maxDepth": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "unique": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/uniqueRule"
+          }
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/checkRule"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "fieldDef": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "string",
+            "number",
+            "decimal",
+            "boolean",
+            "date",
+            "datetime",
+            "enum",
+            "ref",
+            "doc"
+          ]
+        },
+        "label": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean",
+          "default": false
+        },
+        "default": true,
+        "rollup": {
+          "$ref": "#/$defs/rollup"
+        },
+        "inherit": {
+          "$ref": "#/$defs/inherit"
+        },
+        "formula": {
+          "$ref": "#/$defs/expression"
+        }
+      },
+      "allOf": [
+        {
+          "$comment": "rollup / inherit / formula は同時に指定できない",
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "rollup",
+                  "inherit"
+                ]
+              },
+              {
+                "required": [
+                  "rollup",
+                  "formula"
+                ]
+              },
+              {
+                "required": [
+                  "inherit",
+                  "formula"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "$comment": "formula フィールドは入力を持たないため required / default を指定できない",
+          "if": {
+            "required": [
+              "formula"
+            ]
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "required"
+                  ]
+                },
+                {
+                  "required": [
+                    "default"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "string"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "format": {
+                "enum": [
+                  "hostname",
+                  "fqdn",
+                  "host",
+                  "ipv4",
+                  "ipv6",
+                  "cidr",
+                  "mac",
+                  "email",
+                  "uri"
+                ]
+              },
+              "pattern": {
+                "type": "string",
+                "format": "regex"
+              },
+              "minLength": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "maxLength": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "multiline": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "number"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "integer": {
+                "type": "boolean"
+              },
+              "min": {
+                "type": "number"
+              },
+              "max": {
+                "type": "number"
+              },
+              "unit": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "decimal"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "scale"
+            ],
+            "properties": {
+              "scale": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 18
+              },
+              "min": {
+                "$ref": "#/$defs/decimalString"
+              },
+              "max": {
+                "$ref": "#/$defs/decimalString"
+              },
+              "unit": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "date",
+                  "datetime"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "min": {
+                "type": "string"
+              },
+              "max": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "enum"
+              }
+            }
+          },
+          "then": {
+            "oneOf": [
+              {
+                "required": [
+                  "values"
+                ]
+              },
+              {
+                "required": [
+                  "enumRef"
+                ]
+              }
+            ],
+            "properties": {
+              "values": {
+                "$ref": "#/$defs/enumValues"
+              },
+              "enumRef": {
+                "$ref": "#/$defs/identifier"
+              },
+              "multiple": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ref"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "target"
+            ],
+            "properties": {
+              "target": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "$ref": "#/$defs/typeName"
+                }
+              },
+              "multiple": {
+                "type": "boolean"
+              },
+              "onDelete": {
+                "enum": [
+                  "restrict",
+                  "clear"
+                ],
+                "default": "restrict"
+              }
+            }
+          }
+        },
+        {
+          "$comment": "doc は計算フィールドにできない",
+          "if": {
+            "properties": {
+              "type": {
+                "const": "doc"
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "rollup"
+                  ]
+                },
+                {
+                  "required": [
+                    "inherit"
+                  ]
+                },
+                {
+                  "required": [
+                    "formula"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "enumValues": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "value"
+        ],
+        "properties": {
+          "value": {
+            "type": "string",
+            "minLength": 1
+          },
+          "label": {
+            "type": "string"
+          },
+          "deprecated": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "rollup": {
+      "type": "object",
+      "required": [
+        "sourceType",
+        "fn"
+      ],
+      "properties": {
+        "sourceType": {
+          "$ref": "#/$defs/typeName"
+        },
+        "sourceField": {
+          "$ref": "#/$defs/identifier"
+        },
+        "fn": {
+          "enum": [
+            "sum",
+            "count",
+            "countDistinct",
+            "min",
+            "max",
+            "avg",
+            "wavg",
+            "any",
+            "all"
+          ]
+        },
+        "weight": {
+          "$ref": "#/$defs/identifier"
+        },
+        "depth": {
+          "enum": [
+            "children",
+            "descendants"
+          ],
+          "default": "children"
+        },
+        "where": {
+          "$ref": "#/$defs/expression"
+        },
+        "whenNoSource": {
+          "enum": [
+            "empty",
+            "zero",
+            "input"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "fn": {
+                "const": "count"
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "required": [
+                "sourceField"
+              ]
+            }
+          },
+          "else": {
+            "required": [
+              "sourceField"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "fn": {
+                "const": "wavg"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "weight"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "weight"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "inherit": {
+      "oneOf": [
+        {
+          "const": true
+        },
+        {
+          "type": "object",
+          "properties": {
+            "fromType": {
+              "$ref": "#/$defs/typeName"
+            },
+            "field": {
+              "$ref": "#/$defs/identifier"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "uniqueRule": {
+      "type": "object",
+      "required": [
+        "fields",
+        "scope"
+      ],
+      "properties": {
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "scope": {
+          "oneOf": [
+            {
+              "enum": [
+                "parent",
+                "workbook"
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "ancestorType"
+              ],
+              "properties": {
+                "ancestorType": {
+                  "$ref": "#/$defs/typeName"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "checkRule": {
+      "type": "object",
+      "required": [
+        "id",
+        "expr",
+        "message"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "expr": {
+          "$ref": "#/$defs/expression"
+        },
+        "severity": {
+          "enum": [
+            "error",
+            "warning"
+          ],
+          "default": "error"
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

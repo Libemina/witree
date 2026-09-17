@@ -1,0 +1,17 @@
+{
+  "$schema": "../../../meta/marks.v0.1.json",
+  "specVersion": "0.1",
+  "view": "default",
+  "records": {
+    "413a04d8-4dd6-48d6-8291-37623d5745a3": {
+      "style": { "bold": true },
+      "note": "コア機器。変更は事前承認が必要"
+    },
+    "f78d9c8f-bdba-4da9-992e-fcb0e33845ec": {
+      "height": 44,
+      "cells": {
+        "speed": { "style": { "bg": "orange" }, "note": "10Gへの増速を検討中" }
+      }
+    }
+  }
+}

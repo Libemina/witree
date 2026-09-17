@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:tsheet:meta:marks:0.1",
+  "title": "tsheet形式 手動書式 v0.1",
+  "description": "views/<name>.marks.json。レコード単位・セル単位の手動書式と行高。キーはレコード id。",
+  "type": "object",
+  "required": ["specVersion", "view", "records"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "specVersion": { "const": "0.1" },
+    "view": { "type": "string", "pattern": "^[a-z][A-Za-z0-9_-]{0,63}$" },
+    "records": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+      },
+      "additionalProperties": { "$ref": "#/$defs/recordMark" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "recordMark": {
+      "type": "object",
+      "minProperties": 1,
+      "properties": {
+        "height": { "type": "number", "minimum": 16, "maximum": 400 },
+        "style": { "$ref": "urn:tsheet:meta:view:0.1#/$defs/style" },
+        "note": { "type": "string", "maxLength": 500 },
+        "cells": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": { "pattern": "^[a-z][A-Za-z0-9_]{0,63}$" },
+          "additionalProperties": {
+            "type": "object",
+            "minProperties": 1,
+            "properties": {
+              "style": { "$ref": "urn:tsheet:meta:view:0.1#/$defs/style" },
+              "note": { "type": "string", "maxLength": 500 }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

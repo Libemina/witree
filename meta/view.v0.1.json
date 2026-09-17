@@ -1,0 +1,578 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:tsheet:meta:view:0.1",
+  "title": "tsheet形式 View定義 v0.1",
+  "description": "views/<name>.view.json の構造検証用。フィールド参照や式の検証は View仕様 §9 の V 系診断で行う。",
+  "type": "object",
+  "required": [
+    "specVersion",
+    "name",
+    "mode",
+    "columns"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "specVersion": {
+      "const": "0.1"
+    },
+    "name": {
+      "$ref": "#/$defs/identifier"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "mode": {
+      "enum": [
+        "treeGrid",
+        "treePanel",
+        "crosstab"
+      ]
+    },
+    "tree": {
+      "type": "object",
+      "properties": {
+        "types": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/typeName"
+          }
+        },
+        "expandDepth": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "const": "all"
+            }
+          ]
+        },
+        "showTypeBadge": {
+          "type": "boolean",
+          "default": true
+        },
+        "showOutline": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "rows": {
+      "type": "object",
+      "properties": {
+        "height": {
+          "oneOf": [
+            {
+              "const": "auto"
+            },
+            {
+              "type": "number",
+              "minimum": 16,
+              "maximum": 400
+            }
+          ]
+        },
+        "grayOutUnavailable": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "columns": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/column"
+      }
+    },
+    "sort": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "field"
+        ],
+        "properties": {
+          "field": {
+            "$ref": "#/$defs/fieldRef"
+          },
+          "dir": {
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "default": "asc"
+          },
+          "collation": {
+            "enum": [
+              "codepoint",
+              "locale"
+            ],
+            "default": "codepoint"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "filter": {
+      "type": "object",
+      "properties": {
+        "types": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/typeName"
+          }
+        },
+        "expr": {
+          "$ref": "#/$defs/expression"
+        },
+        "ancestors": {
+          "enum": [
+            "dim",
+            "show"
+          ],
+          "default": "dim"
+        }
+      },
+      "additionalProperties": false
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/rule"
+      }
+    },
+    "panel": {
+      "type": "object",
+      "properties": {
+        "width": {
+          "type": "number",
+          "minimum": 240
+        },
+        "types": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/typeName"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "columns": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/column"
+                }
+              },
+              "collapsed": {
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "crosstab": {
+      "type": "object",
+      "required": [
+        "sourceType",
+        "key",
+        "value",
+        "fn"
+      ],
+      "properties": {
+        "sourceType": {
+          "$ref": "#/$defs/typeName"
+        },
+        "key": {
+          "$ref": "#/$defs/fieldId"
+        },
+        "keys": {
+          "oneOf": [
+            {
+              "const": "fromData"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "object",
+              "required": [
+                "from",
+                "to",
+                "step"
+              ],
+              "properties": {
+                "from": {
+                  "type": "string"
+                },
+                "to": {
+                  "type": "string"
+                },
+                "step": {
+                  "enum": [
+                    "day",
+                    "month",
+                    "quarter",
+                    "year"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "keyLabel": {
+          "type": "string",
+          "description": "列見出しの表示パターン（date/期間キー用）。例: YYYY/MM, M月"
+        },
+        "value": {
+          "$ref": "#/$defs/fieldId"
+        },
+        "fn": {
+          "enum": [
+            "sum",
+            "count",
+            "min",
+            "max",
+            "avg"
+          ]
+        },
+        "columnWidth": {
+          "type": "number",
+          "minimum": 24,
+          "maximum": 2000
+        },
+        "format": {
+          "$ref": "#/$defs/format"
+        },
+        "rowTotal": {
+          "type": "boolean",
+          "default": false
+        },
+        "columnTotal": {
+          "type": "boolean",
+          "default": false
+        },
+        "editable": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z][A-Za-z0-9_-]{0,63}$"
+    },
+    "typeName": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Za-z0-9_]{0,63}$"
+    },
+    "fieldId": {
+      "type": "string",
+      "pattern": "^[a-z][A-Za-z0-9_]{0,63}$"
+    },
+    "fieldRef": {
+      "description": "fieldId、または Type.fieldId（型で限定）",
+      "type": "string",
+      "pattern": "^([A-Z][A-Za-z0-9_]{0,63}\\.)?[a-z][A-Za-z0-9_]{0,63}$"
+    },
+    "columnRef": {
+      "description": "fieldRef、または特殊列 $title / $type / $outline / $id",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/fieldRef"
+        },
+        {
+          "enum": [
+            "$title",
+            "$type",
+            "$outline",
+            "$id"
+          ]
+        }
+      ]
+    },
+    "expression": {
+      "type": "string",
+      "minLength": 1
+    },
+    "column": {
+      "type": "object",
+      "required": [
+        "field"
+      ],
+      "properties": {
+        "field": {
+          "$ref": "#/$defs/columnRef"
+        },
+        "label": {
+          "type": "string"
+        },
+        "width": {
+          "type": "number",
+          "minimum": 24,
+          "maximum": 2000
+        },
+        "hidden": {
+          "type": "boolean",
+          "default": false
+        },
+        "pinned": {
+          "type": "boolean",
+          "default": false
+        },
+        "align": {
+          "enum": [
+            "start",
+            "center",
+            "end"
+          ]
+        },
+        "wrap": {
+          "type": "boolean",
+          "default": false
+        },
+        "readOnly": {
+          "type": "boolean",
+          "default": false
+        },
+        "format": {
+          "$ref": "#/$defs/format"
+        },
+        "labelExpr": {
+          "$ref": "#/$defs/expression",
+          "description": "見出しを式で計算する（root 参照・TODAY・FORMAT のみ利用可）。label より優先"
+        }
+      },
+      "additionalProperties": false
+    },
+    "format": {
+      "type": "object",
+      "properties": {
+        "decimals": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18
+        },
+        "thousands": {
+          "type": "boolean"
+        },
+        "unit": {
+          "enum": [
+            "none",
+            "suffix",
+            "prefix"
+          ]
+        },
+        "percent": {
+          "type": "boolean"
+        },
+        "date": {
+          "type": "string",
+          "description": "例: YYYY-MM-DD, YYYY/MM/DD, M/D, YYYY年M月D日"
+        },
+        "datetime": {
+          "type": "string"
+        },
+        "boolean": {
+          "enum": [
+            "checkbox",
+            "yesNo",
+            "onOff"
+          ]
+        },
+        "enum": {
+          "enum": [
+            "label",
+            "value",
+            "both"
+          ]
+        },
+        "ref": {
+          "enum": [
+            "title",
+            "path"
+          ]
+        },
+        "doc": {
+          "enum": [
+            "preview",
+            "link"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "style": {
+      "type": "object",
+      "minProperties": 1,
+      "properties": {
+        "bg": {
+          "$ref": "#/$defs/color"
+        },
+        "fg": {
+          "$ref": "#/$defs/color"
+        },
+        "bold": {
+          "type": "boolean"
+        },
+        "italic": {
+          "type": "boolean"
+        },
+        "strike": {
+          "type": "boolean"
+        },
+        "underline": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "color": {
+      "description": "パレット名（テーマに追従）または #RRGGBB",
+      "oneOf": [
+        {
+          "enum": [
+            "gray",
+            "red",
+            "orange",
+            "yellow",
+            "green",
+            "teal",
+            "blue",
+            "purple",
+            "pink"
+          ]
+        },
+        {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        }
+      ]
+    },
+    "rule": {
+      "type": "object",
+      "required": [
+        "id",
+        "when",
+        "style"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "description": {
+          "type": "string"
+        },
+        "types": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/typeName"
+          }
+        },
+        "when": {
+          "$ref": "#/$defs/expression"
+        },
+        "target": {
+          "enum": [
+            "row",
+            "cell"
+          ],
+          "default": "row"
+        },
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/fieldRef"
+          }
+        },
+        "style": {
+          "$ref": "#/$defs/style"
+        },
+        "stop": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "additionalProperties": false,
+      "if": {
+        "properties": {
+          "target": {
+            "const": "cell"
+          }
+        },
+        "required": [
+          "target"
+        ]
+      },
+      "then": {
+        "required": [
+          "fields"
+        ]
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "crosstab"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "crosstab"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "enum": [
+              "treeGrid",
+              "treePanel"
+            ]
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "crosstab"
+          ]
+        }
+      }
+    }
+  ]
+}

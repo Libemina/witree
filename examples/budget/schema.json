@@ -1,0 +1,160 @@
+{
+  "$schema": "../../meta/schema.v0.1.json",
+  "specVersion": "0.1",
+  "schemaVersion": 1,
+  "id": "budget",
+  "title": "部門予算（月次）",
+  "root": {
+    "fields": {
+      "fiscalYear": {
+        "type": "number",
+        "label": "会計年度",
+        "integer": true,
+        "required": true
+      },
+      "currentMonth": {
+        "type": "string",
+        "label": "当月",
+        "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"
+      },
+      "grandTotal": {
+        "type": "decimal",
+        "label": "全体合計",
+        "scale": 0,
+        "unit": "円",
+        "rollup": {
+          "sourceType": "Entry",
+          "sourceField": "amount",
+          "fn": "sum",
+          "depth": "descendants"
+        }
+      }
+    },
+    "children": {
+      "Category": {
+        "cardinality": "many"
+      }
+    }
+  },
+  "types": {
+    "Category": {
+      "label": "区分",
+      "titleTemplate": "{name}",
+      "fields": {
+        "name": {
+          "type": "string",
+          "label": "区分名",
+          "required": true
+        },
+        "total": {
+          "type": "decimal",
+          "label": "年間合計",
+          "scale": 0,
+          "unit": "円",
+          "rollup": {
+            "sourceType": "Entry",
+            "sourceField": "amount",
+            "fn": "sum",
+            "depth": "descendants"
+          }
+        }
+      },
+      "children": {
+        "Account": {
+          "cardinality": "many"
+        }
+      }
+    },
+    "Account": {
+      "label": "勘定科目",
+      "titleTemplate": "{code} {name}",
+      "fields": {
+        "code": {
+          "type": "string",
+          "label": "科目コード",
+          "required": true,
+          "pattern": "^[0-9]{4}$"
+        },
+        "name": {
+          "type": "string",
+          "label": "科目名",
+          "required": true
+        },
+        "owner": {
+          "type": "string",
+          "label": "担当"
+        },
+        "total": {
+          "type": "decimal",
+          "label": "年間合計",
+          "scale": 0,
+          "unit": "円",
+          "rollup": {
+            "sourceType": "Entry",
+            "sourceField": "amount",
+            "fn": "sum"
+          }
+        },
+        "months": {
+          "type": "number",
+          "label": "計上月数",
+          "integer": true,
+          "rollup": {
+            "sourceType": "Entry",
+            "fn": "count",
+            "where": "NOT(ISBLANK(amount))"
+          }
+        },
+        "notes": {
+          "type": "doc",
+          "label": "備考"
+        }
+      },
+      "children": {
+        "Entry": {
+          "cardinality": "many"
+        }
+      },
+      "unique": [
+        {
+          "fields": [
+            "code"
+          ],
+          "scope": "workbook",
+          "message": "科目コードが重複しています"
+        }
+      ]
+    },
+    "Entry": {
+      "label": "月別計上",
+      "titleTemplate": "{period}",
+      "fields": {
+        "period": {
+          "type": "string",
+          "label": "年月",
+          "required": true,
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"
+        },
+        "amount": {
+          "type": "decimal",
+          "label": "金額",
+          "scale": 0,
+          "unit": "円"
+        },
+        "memo": {
+          "type": "string",
+          "label": "メモ"
+        }
+      },
+      "unique": [
+        {
+          "fields": [
+            "period"
+          ],
+          "scope": "parent",
+          "message": "同じ科目で年月が重複しています"
+        }
+      ]
+    }
+  }
+}

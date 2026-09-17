@@ -1,0 +1,12 @@
+# 改行は常に LF（Windows の core.autocrlf による CRLF 変換を防ぐ。正規化とゴールデンテストのため）
+* text=auto eol=lf
+
+# tsheet 形式（本体仕様 §2.2）
+*.tsheet text eol=lf diff=tsheet
+*.jsonl  text eol=lf
+
+# バイナリ
+*.png  binary
+*.jpg  binary
+*.ico  binary
+*.icns binary

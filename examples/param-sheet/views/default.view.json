@@ -1,0 +1,54 @@
+{
+  "$schema": "../../../meta/view.v0.1.json",
+  "specVersion": "0.1",
+  "name": "default",
+  "title": "全体（ツリー）",
+  "mode": "treeGrid",
+  "tree": { "expandDepth": 2, "showTypeBadge": true },
+  "rows": { "height": "auto" },
+  "columns": [
+    { "field": "$title", "label": "名称", "width": 260, "pinned": true },
+    { "field": "role", "width": 120, "format": { "enum": "label" } },
+    { "field": "mgmtIp", "width": 130 },
+    { "field": "fqdn", "width": 220 },
+    { "field": "System.ntp", "label": "NTP", "width": 130 },
+    { "field": "System.dns", "label": "DNS", "width": 130 },
+    { "field": "mode", "width": 90, "format": { "enum": "label" } },
+    { "field": "speed", "width": 70, "align": "end" },
+    { "field": "uplink", "width": 200, "format": { "ref": "path" } },
+    { "field": "vlanCount", "label": "VLAN", "width": 60, "align": "end" },
+    { "field": "vlanId", "width": 80, "align": "end" },
+    { "field": "name", "width": 140 },
+    { "field": "notes", "width": 240, "wrap": true, "format": { "doc": "preview" } }
+  ],
+  "sort": [
+    { "field": "Interface.port", "dir": "asc" }
+  ],
+  "rules": [
+    {
+      "id": "disabledIf",
+      "description": "無効化したIFを薄く表示",
+      "types": ["Interface"],
+      "when": "NOT(enabled)",
+      "target": "row",
+      "style": { "fg": "gray", "strike": true }
+    },
+    {
+      "id": "manyVlanOnAccess",
+      "types": ["Interface"],
+      "when": "AND(mode = \"access\", vlanCount > 1)",
+      "target": "cell",
+      "fields": ["vlanCount"],
+      "style": { "bg": "red", "bold": true }
+    },
+    {
+      "id": "inheritedNtp",
+      "description": "上位から継承していない（機器固有の）NTPを強調",
+      "types": ["System"],
+      "when": "NOT(ISBLANK(ntp))",
+      "target": "cell",
+      "fields": ["System.ntp"],
+      "style": { "bg": "yellow" }
+    }
+  ]
+}

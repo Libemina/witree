@@ -1,0 +1,16 @@
+{
+  "$schema": "../../../meta/view.v0.1.json",
+  "specVersion": "0.1",
+  "name": "entries",
+  "title": "明細（ツリー）",
+  "mode": "treeGrid",
+  "tree": { "expandDepth": 2 },
+  "columns": [
+    { "field": "$title", "width": 240, "pinned": true },
+    { "field": "owner", "width": 90 },
+    { "field": "amount", "width": 110, "format": { "thousands": true } },
+    { "field": "total", "width": 120, "format": { "thousands": true } },
+    { "field": "months", "width": 70, "align": "end" },
+    { "field": "memo", "width": 200, "wrap": true }
+  ]
+}

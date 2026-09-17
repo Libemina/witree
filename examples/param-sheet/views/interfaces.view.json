@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../meta/view.v0.1.json",
+  "specVersion": "0.1",
+  "name": "interfaces",
+  "title": "トランクIF一覧",
+  "mode": "treeGrid",
+  "tree": { "expandDepth": "all", "showOutline": true },
+  "rows": { "height": 28 },
+  "columns": [
+    { "field": "$title", "width": 220, "pinned": true },
+    { "field": "Interface.description", "label": "説明", "width": 220 },
+    { "field": "speed", "width": 70 },
+    { "field": "uplink", "width": 220, "format": { "ref": "path" } },
+    { "field": "vlanCount", "label": "VLAN数", "width": 70, "align": "end" }
+  ],
+  "filter": {
+    "types": ["Interface"],
+    "expr": "mode = \"trunk\"",
+    "ancestors": "dim"
+  }
+}
