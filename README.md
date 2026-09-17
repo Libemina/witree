@@ -143,6 +143,7 @@ pnpm test:browser       # tsheet-core のテストを Chromium・Firefox・WebKi
 |---|---|
 | [examples/param-sheet/](examples/param-sheet/) | ネットワーク機器のパラメータシート。Site → Device → System / Interface → Vlan。NTP・DNS・syslog の継承と遮断、IF の対向参照、FQDN の式、VLAN 数の集計、treeGrid / treePanel の View |
 | [examples/budget/](examples/budget/) | 月次予算。Category → Account → Entry。4 月始まりの会計年度、月次の crosstab、会計四半期の集計表、同じデータの treeGrid 表示 |
+| [examples/wbs/](examples/wbs/) | 小規模なシステム開発の WBS。自己再帰する Task（最大 4 段）。末端で入力して親で集計する工数・開始・終了（`whenNoSource: "input"`）、工数で重み付けした進捗（`wavg`）、階層番号、先行タスクの参照（`dependsOn`）、終了日が開始日より前の検証違反の例（3.2.1 受注入力画面）、treeGrid の View |
 
 ## ロードマップ
 
