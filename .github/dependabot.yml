@@ -1,0 +1,47 @@
+# 依存関係の定期更新。cargo は Tauri の導入時（D-01）に追加する。
+version: 2
+updates:
+  - package-ecosystem: npm # pnpm のワークスペース（pnpm-lock.yaml）もこの指定で扱われる
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    # 公開直後の版は取り込まない（乗っ取られたパッケージが短期間で取り下げられる事例への備え）。
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore(deps)
+    labels: ["type:chore", "area:repo"]
+    groups:
+      # 互いに版を揃える必要があるものはまとめて上げる。
+      vitest:
+        patterns: ["vitest", "@vitest/*", "playwright"]
+      eslint:
+        patterns: ["eslint", "@eslint/*", "typescript-eslint", "globals"]
+    ignore:
+      # typescript-eslint が対応する範囲（<6.1.0）に合わせて 6.0 系に固定している（ADR-0001）。
+      # typescript-eslint が新しい TypeScript に対応したら、この指定を外して手動で上げる。
+      - dependency-name: typescript
+        versions: [">=6.1.0"]
+      # Node.js の版（.nvmrc）に合わせる。
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: ci(deps)
+    labels: ["type:chore", "area:repo"]
+    groups:
+      actions:
+        patterns: ["*"]
