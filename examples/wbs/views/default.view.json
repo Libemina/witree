@@ -1,0 +1,42 @@
+{
+  "$schema": "../../../meta/view.v0.1.json",
+  "specVersion": "0.1",
+  "name": "default",
+  "title": "WBS",
+  "mode": "treeGrid",
+  "tree": { "expandDepth": "all", "showTypeBadge": false },
+  "columns": [
+    { "field": "$title", "label": "タスク", "width": 280, "pinned": true },
+    { "field": "assignee", "width": 80 },
+    { "field": "effort", "width": 80, "format": { "decimals": 1 } },
+    { "field": "start", "width": 100, "format": { "date": "YYYY/MM/DD" } },
+    { "field": "end", "width": 100, "format": { "date": "YYYY/MM/DD" } },
+    { "field": "days", "width": 70 },
+    { "field": "progress", "width": 80, "format": { "decimals": 0 } },
+    { "field": "dependsOn", "width": 220 }
+  ],
+  "rules": [
+    {
+      "id": "done",
+      "description": "完了したタスクを薄く表示",
+      "when": "progress >= 100",
+      "style": { "fg": "gray" }
+    },
+    {
+      "id": "dateOrder",
+      "description": "終了日が開始日より前（スキーマの dateOrder チェックと同じ条件）",
+      "when": "end < start",
+      "target": "cell",
+      "fields": ["start", "end"],
+      "style": { "bg": "red" }
+    },
+    {
+      "id": "overdue",
+      "description": "終了日を過ぎても完了していないタスク",
+      "when": "AND(end < TODAY(), progress < 100)",
+      "target": "cell",
+      "fields": ["end"],
+      "style": { "fg": "red", "bold": true }
+    }
+  ]
+}
