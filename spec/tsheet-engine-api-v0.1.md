@@ -38,7 +38,7 @@ CLI（Node）  ──直接呼び出し──▶  tsheet-core          ◀──
 
 | メソッド | 内容 |
 |---|---|
-| `load(parts)` | パートを解析し、スキーマの意味検証（S 系）、データの構造検証（D01〜D09、D19〜D22）、実効値の計算、値の検証（D10〜D18）、View の検証（V 系）を行う。`readOnly` の条件は本体仕様 §12 に従う（S 系 error、schemaVersion 不一致、コンフリクトマーカー、単一ファイルの途切れ） |
+| `load(parts)` | パートを解析し、スキーマの意味検証（S 系）、データの構造検証（D01〜D09、D19、D22）、実効値の計算、値の検証（D10〜D18、D20、D23）、View の検証（V 系）を行う。`readOnly` の条件は本体仕様 §12 に従う（S 系 error、schemaVersion 不一致、コンフリクトマーカー、単一ファイルの途切れ） |
 | `serialize()` | 正規化済みの `PartMap` を返す（本体仕様 §11.1、View仕様 §10）。doc の本文、`params` を含む `workbook.json` も含む |
 | `contentHash()` | `serialize()` 結果全体のハッシュ。Host は保存時にこれを記録し、外部変更の検出に使う |
 
