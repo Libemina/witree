@@ -37,6 +37,7 @@ tsheet-core・tsheet-cli・witree を 1 つのリポジトリで開発する。�
 
 - GitHub Actions の `check`（lint・typecheck・Node でのテスト）と `test-browser`（ブラウザでのテスト）を、main のルールセットの必須ステータスチェックにする。
 - ワークフローの `permissions` は `contents: read` を既定とし、アクションはコミット SHA で固定する。
+- リポジトリの Actions の設定で GitHub 製のアクションだけを許可する。pnpm は corepack で用意する（Node.js 25 以降は corepack が同梱されないため、Node.js を上げるときに見直す）。
 
 ## 影響
 
