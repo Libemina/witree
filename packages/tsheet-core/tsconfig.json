@@ -1,0 +1,10 @@
+{
+  // エンジン本体。決定性のため lib は ES2022 のみ、types は空（DOM / Node 型を含めない）。
+  // テストは test/tsconfig.json で別に検査する（vitest の型が Node 型を持ち込むため）。
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": []
+  },
+  "include": ["src/**/*.ts", "../../engine/engine-api.v0.1.ts"]
+}

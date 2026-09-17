@@ -1,0 +1,13 @@
+{
+  "name": "witree",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Witree アプリ（Web / デスクトップ）",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p . && tsc --noEmit -p test"
+  },
+  "dependencies": {
+    "tsheet-core": "workspace:*"
+  }
+}

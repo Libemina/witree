@@ -1,0 +1,5 @@
+{
+  // tsheet-core と同じコンパイラ設定で、実行環境の型を使うコードが型検査に失敗することを確かめる。
+  "extends": "../../../packages/tsheet-core/tsconfig.json",
+  "include": ["*.ts"]
+}
