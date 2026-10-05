@@ -253,6 +253,7 @@ export interface Engine {
  * a と b の間に入る order を返す（仕様 §5.2、本体仕様 §11「order の扱い」）。
  * a が null なら先頭、b が null なら末尾への挿入。a < b なら a < 結果 < b（コードポイント順）。
  * tsheet-core が `orderBetween` としてエクスポートする実装はこの型に従う（L-09）。
+ * 前提違反（英数字以外・空文字、a >= b、間に入る値が存在しない組）は呼び出し側の誤りで、TypeError を投げる（診断にはしない）。
  */
 export type OrderBetween = (a: Order | null, b: Order | null) => Order;
 

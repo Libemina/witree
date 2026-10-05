@@ -62,7 +62,7 @@ CLI（Node）  ──直接呼び出し──▶  tsheet-core          ◀──
 
 Op は「選択中の行の下」「最後の兄弟の後ろ」のような相対指定を持たない。`create` と `move` の `order` は呼び出し側が `orderBetween(a, b)` で求めて渡し、`create` の `id` は呼び出し側の `Host.ids.newId()` で採番して渡す。これにより、同じ Op の列をどの環境で再生しても同じ結果になり、Undo・スナップショット比較・将来の CRDT 化に共通の基盤ができる。
 
-`orderBetween(a: Order | null, b: Order | null): Order` は、同じ親の下で隣接する 2 つの `order` の間に入る値を返す純粋関数である（本体仕様 §11「order の扱い」。`a` が `null` なら先頭、`b` が `null` なら末尾への挿入。`a < b` なら `a < 結果 < b` がコードポイント順で成り立つ）。エンジンの状態に依存しないため `Engine` のメソッドではなく、tsheet-core の単独エクスポート（契約の `OrderBetween` 型）として提供し、UI は Worker を経由せずメインスレッドで同期に呼ぶ。`id` の採番も同様に `Engine` の責務ではなく、`Host` の責務である（§3）。
+`orderBetween(a: Order | null, b: Order | null): Order` は、同じ親の下で隣接する 2 つの `order` の間に入る値を返す純粋関数である（本体仕様 §11「order の扱い」。`a` が `null` なら先頭、`b` が `null` なら末尾への挿入。`a < b` なら `a < 結果 < b` がコードポイント順で成り立つ）。エンジンの状態に依存しないため `Engine` のメソッドではなく、tsheet-core の単独エクスポート（契約の `OrderBetween` 型）として提供し、UI は Worker を経由せずメインスレッドで同期に呼ぶ。`id` の採番も同様に `Engine` の責務ではなく、`Host` の責務である（§3）。`a` または `b` が `^[0-9A-Za-z]+$` に合わない（空文字を含む）、`a >= b`（コードポイント順）、または間に入る値が存在しない組（例：`"a0"` と `"a00"`）を渡すのは呼び出し側の誤りであり、実装は例外（`TypeError`）を投げる。E 系の診断にはしない。
 
 ### 5.3 トランザクション
 
