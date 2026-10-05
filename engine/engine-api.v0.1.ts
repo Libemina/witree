@@ -176,7 +176,7 @@ export interface ProjectionOptions {
 // ---------------------------------------------------------------------------
 export interface ExprContext { type: TypeName | "Root" | "none"; view?: ViewName; purpose: "formula" | "rollupWhere" | "check" | "filter" | "rule" | "labelExpr" | "column" | "adhoc" }
 export interface ExprInfo { resultType: string; references: { self: FieldId[]; parent: FieldId[]; root: FieldId[] }; functions: string[] }
-export interface ExprLimits { maxLength: 4096; maxDepth: 64; maxSteps: 100000; maxRegexLength: 512; maxStringLength: 65536 }
+export interface ExprLimits { maxLength: 4096; maxDepth: 64; maxSteps: 100000; maxRegexLength: 512; maxStringLength: 65536 }   // maxLength は UTF-16 コード単位、maxDepth は根を 1 とする段数（§9）
 
 // ---------------------------------------------------------------------------
 // reconcile（3 方向マージ）
