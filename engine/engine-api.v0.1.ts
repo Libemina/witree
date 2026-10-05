@@ -204,9 +204,12 @@ export type Resolution = { conflict: Conflict; choose: "local" | "disk" } | { co
 // ---------------------------------------------------------------------------
 export interface LoadResult { diagnostics: Diagnostic[]; readOnly: boolean; readOnlyReason?: "schemaError" | "versionMismatch" | "conflictMarkers" | "truncated" }
 
+/** `unpack` の結果。構造不正（D21）があっても失敗にはせず、解析できた範囲の `parts` と D21 の `diagnostics` を返す（§11） */
+export interface UnpackResult { parts: PartMap; diagnostics: Diagnostic[] }
+
 export interface Engine {
   // ライフサイクル
-  load(parts: PartMap): Promise<Result<LoadResult>>;
+  load(parts: PartMap, opts?: { unpackDiagnostics?: Diagnostic[] }): Promise<Result<LoadResult>>;   // 単一ファイルから開くときは unpack の diagnostics を渡す。D21 があれば truncated（§4）
   serialize(): Promise<PartMap>;                          // 正規化済み。docs も含む
   contentHash(): Promise<string>;
 
@@ -234,7 +237,7 @@ export interface Engine {
 
   // 形式変換（純粋関数。load 不要）
   pack(parts: PartMap): Promise<string>;
-  unpack(single: string): Promise<Result<PartMap>>;
+  unpack(single: string): Promise<UnpackResult>;           // D21 では失敗にせず、解析できたパートと診断を返す
 
   // ユーティリティ
   version(): Promise<{ engine: string; spec: "0.1" }>;

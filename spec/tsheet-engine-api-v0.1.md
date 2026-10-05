@@ -40,7 +40,7 @@ CLI（Node）  ──直接呼び出し──▶  tsheet-core          ◀──
 
 | メソッド | 内容 |
 |---|---|
-| `load(parts)` | パートを解析し、スキーマの意味検証（S 系）、データの構造検証（D01〜D09、D19、D22）、実効値の計算、値の検証（D10〜D18、D20、D23）、View の検証（V 系）を行う。`readOnly` の条件は本体仕様 §12 に従う（S 系 error、schemaVersion 不一致、コンフリクトマーカー、単一ファイルの途切れ） |
+| `load(parts, opts?)` | パートを解析し、スキーマの意味検証（S 系）、データの構造検証（D01〜D09、D19、D22）、実効値の計算、値の検証（D10〜D18、D20、D23）、View の検証（V 系）を行う。`readOnly` の条件は本体仕様 §12 に従う（S 系 error、schemaVersion 不一致、コンフリクトマーカー、単一ファイルの途切れ）。単一ファイルから開くときは、Host が `unpack` の `parts` と `diagnostics` をそれぞれ `parts` と `opts.unpackDiagnostics` に渡す。`unpackDiagnostics` に D21 が 1 件でもあれば、単一ファイルの途切れ（構造不正）として読み取り専用で開き（`readOnlyReason: "truncated"`）、その診断を `LoadResult.diagnostics` に含める |
 | `serialize()` | 正規化済みの `PartMap` を返す（本体仕様 §11.1、View仕様 §10）。doc の本文、`params` を含む `workbook.json` も含む |
 | `contentHash()` | `serialize()` 結果全体のハッシュ。Host は保存時にこれを記録し、外部変更の検出に使う |
 
@@ -219,7 +219,8 @@ View 定義は JSON のキー単位（`columns` は `field` をキー、`rules` 
 ## 11. 差分と形式変換
 
 - `diff(a, b)` は 2 つの `PartMap` をレコード単位で比較し、作成・削除・移動・更新の一覧と変わったパートを返す。スナップショットの比較・復元、CLI の `diff` コマンドに使う。
-- `pack` / `unpack` は本体仕様 §2.2 の変換で、`load` 不要の純粋関数である。`unpack` は D21（構造不正）を返しうる。
+- `pack` / `unpack` は本体仕様 §2.2 の変換で、`load` 不要の純粋関数である。
+- `unpack` は `UnpackResult`（`parts` と `diagnostics`）を返す。構造不正（D21）があっても失敗や例外にはせず、解析できた範囲のパートを `parts` に、D21 を `diagnostics` に入れて返す（途切れたファイルでは最後の途切れたパートまで含める。不正なパートパスのパートの内容、解釈できない区切り行、最初の `%%part` より前と `%%end` より後ろの内容は読み飛ばす。重複したパートは最初のものを残す）。各 D21 は `detail.reason` で原因を、`at.line`（単一ファイル内の 1 始まりの行番号）と `at.part` で位置を示す。Host はこの結果を `load` に渡し、ワークブックを読み取り専用で開く（§4）。
 
 ## 12. Worker メッセージ
 
