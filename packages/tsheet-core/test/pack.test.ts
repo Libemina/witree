@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { pack, unpack, type Diagnostic, type PartMap } from "../src/index.ts";
+import { pack, unpack, type Diagnostic, type PartMap, type UnpackResult } from "../src/index.ts";
 
 // サンプルのワークブック。Node とブラウザの両方で動かすため、node:fs ではなく Vite の glob import で読む。
 const exampleFiles = import.meta.glob<string>("../../../examples/**", {
@@ -19,23 +19,24 @@ function exampleParts(name: string): PartMap {
 
 function unpackOk(single: string): PartMap {
   const r = unpack(single);
-  if (!r.ok) throw new Error(`unpack に失敗: ${JSON.stringify(r.errors)}`);
   expect(r.diagnostics).toEqual([]);
-  return r.value;
+  return r.parts;
 }
 
-function unpackErrors(single: string): Diagnostic[] {
+/** D21 が 1 件以上あることを確認し、結果をそのまま返す（parts も検査できるように）。 */
+function unpackD21(single: string): UnpackResult {
   const r = unpack(single);
-  if (r.ok) throw new Error("unpack が成功してしまった");
-  expect(r.errors.length).toBeGreaterThan(0);
-  for (const e of r.errors) {
+  expect(r.diagnostics.length).toBeGreaterThan(0);
+  for (const e of r.diagnostics) {
     expect(e.code).toBe("D21");
     expect(e.severity).toBe("error");
+    expect(e.at?.line).toBeGreaterThan(0);
+    expect(typeof e.detail?.["reason"]).toBe("string");
   }
-  return r.errors;
+  return r;
 }
 
-const reasons = (errors: Diagnostic[]): unknown[] => errors.map((e) => e.detail?.["reason"]);
+const reasons = (diagnostics: Diagnostic[]): unknown[] => diagnostics.map((e) => e.detail?.["reason"]);
 
 describe("サンプルのワークブック", () => {
   test.each(["param-sheet", "budget"])("%s：pack → unpack → pack が同一のバイト列になる", (name) => {
@@ -65,6 +66,35 @@ describe("サンプルのワークブック", () => {
       "views/interfaces.view.json",
       "data.jsonl",
     ]);
+  });
+
+  test.each(["param-sheet", "budget"])("%s：%%end が欠落したファイルからも全パートを取り出せる（D21 missing-end）", (name) => {
+    const parts = exampleParts(name);
+    const packed = pack(parts);
+    expect(packed.endsWith("\n%%end\n")).toBe(true);
+    const r = unpackD21(packed.slice(0, -"%%end\n".length));
+    expect(reasons(r.diagnostics)).toEqual(["missing-end"]);
+    expect(r.parts).toEqual(parts);
+  });
+
+  test.each(["param-sheet", "budget"])("%s：途中で途切れたファイルからは、途切れた最後のパートまで取り出せる", (name) => {
+    const parts = exampleParts(name);
+    const packed = pack(parts);
+    // 最後のパート（data.jsonl）の途中で切る
+    const lastPart = packed.lastIndexOf("%%part data.jsonl\n");
+    const cut = packed.indexOf("\n", lastPart + "%%part data.jsonl\n".length) + 5;
+    const truncated = packed.slice(0, cut);
+    const r = unpackD21(truncated);
+    expect(reasons(r.diagnostics)).toEqual(["missing-end"]);
+    expect(Object.keys(r.parts).sort()).toEqual(Object.keys(parts).sort());
+    for (const [path, content] of Object.entries(parts)) {
+      if (path === "data.jsonl") continue;
+      expect(r.parts[path]).toBe(content);
+    }
+    const data = r.parts["data.jsonl"] ?? "";
+    expect(data.endsWith("\n")).toBe(true); // 途切れた最終行にも改行を補う
+    expect(data.length).toBeGreaterThan(1);
+    expect(parts["data.jsonl"]?.startsWith(data.slice(0, -1))).toBe(true);
   });
 });
 
@@ -212,125 +242,190 @@ describe("unpack", () => {
     expect(unpackOk(single)).toEqual({ "data.jsonl": "{}\n", "docs/a/notes.md": "# a\n", "docs/b/notes.md": "# b\n" });
   });
 
-  describe("D21", () => {
-    test("%%end がない（途中で途切れている）", () => {
-      for (const single of [
-        "%%tsheet 0.1\n%%part workbook.json\n{}\n",
-        "%%tsheet 0.1\n%%part workbook.json\n{}",
-        "%%tsheet 0.1\n%%part workbook.json\n{\n  \"spec",
-        "%%tsheet 0.1\n",
-        "%%tsheet 0.1",
-        "%%tsheet 0.1\n%%part workbook.json\n{}\n%%en",
-      ]) {
-        expect(reasons(unpackErrors(single))).toContain("missing-end");
+  describe("D21（構造不正でも解析できた範囲のパートを返す）", () => {
+    test("どんな入力でも例外を投げない", () => {
+      for (const single of ["", "\n", "%%", "%%%", "\uFEFF", "%%end", "%%part", "%%tsheet 0.1\n%%part \n"]) {
+        expect(() => unpack(single)).not.toThrow();
       }
     });
 
-    test("%%end がない：スタッフィングされた %%%end は終端ではない", () => {
-      expect(reasons(unpackErrors("%%tsheet 0.1\n%%part docs/x/notes.md\n%%%end\n"))).toEqual(["missing-end"]);
+    describe("missing-end：%%end がない（途中で途切れている）", () => {
+      test.each<[string, PartMap]>([
+        ["%%tsheet 0.1\n%%part workbook.json\n{}\n", { "workbook.json": "{}\n" }],
+        ["%%tsheet 0.1\n%%part workbook.json\n{}", { "workbook.json": "{}\n" }],
+        ["%%tsheet 0.1\n%%part workbook.json\n{\n  \"spec", { "workbook.json": "{\n  \"spec\n" }], // 途切れた最終行にも改行を補う
+        ["%%tsheet 0.1\n%%part workbook.json\n{}\n%%part schema.json\n{\n", { "workbook.json": "{}\n", "schema.json": "{\n" }],
+        ["%%tsheet 0.1\n%%part workbook.json\n{}\n%%part schema.json\n", { "workbook.json": "{}\n", "schema.json": "" }],
+        ["%%tsheet 0.1\n%%part workbook.json\n{}\n%%part schema.json", { "workbook.json": "{}\n", "schema.json": "" }],
+        ["%%tsheet 0.1\n", {}],
+        ["%%tsheet 0.1", {}],
+      ])("%j", (single, parts) => {
+        const r = unpackD21(single);
+        expect(reasons(r.diagnostics)).toEqual(["missing-end"]);
+        expect(r.parts).toEqual(parts);
+      });
+
+      test("途切れた %%en は区切り行として解釈できず、missing-end にもなる", () => {
+        const r = unpackD21("%%tsheet 0.1\n%%part workbook.json\n{}\n%%en");
+        expect(reasons(r.diagnostics)).toEqual(["unknown-directive", "missing-end"]);
+        expect(r.parts).toEqual({ "workbook.json": "{}\n" });
+      });
+
+      test("スタッフィングされた %%%end は終端ではない", () => {
+        const r = unpackD21("%%tsheet 0.1\n%%part docs/x/notes.md\n%%%end\n");
+        expect(reasons(r.diagnostics)).toEqual(["missing-end"]);
+        expect(r.parts).toEqual({ "docs/x/notes.md": "%%end\n" });
+      });
+
+      test("行番号は最終行を指す", () => {
+        const [e] = unpackD21("%%tsheet 0.1\n%%part workbook.json\n{}\n").diagnostics;
+        expect(e?.at).toEqual({ line: 4 });
+      });
     });
 
-    test("%%end がない：行番号は最終行を指す", () => {
-      const [e] = unpackErrors("%%tsheet 0.1\n%%part workbook.json\n{}\n");
-      expect(e?.at?.line).toBe(4);
+    describe("missing-header：先頭行がない・不正", () => {
+      test.each<[string, unknown[], PartMap]>([
+        ["", ["missing-header", "missing-end"], {}],
+        ["{}\n", ["missing-header", "content-outside-part", "missing-end"], {}],
+        ["\n%%tsheet 0.1\n%%end\n", ["missing-header", "content-outside-part", "unknown-directive"], {}],
+        [" %%tsheet 0.1\n%%end\n", ["missing-header", "content-outside-part"], {}],
+        ["%%tsheet\n%%end\n", ["missing-header", "unknown-directive"], {}],
+        ["%%tsheet0.1\n%%end\n", ["missing-header", "unknown-directive"], {}],
+        // 1 行目から区切り行として解析するので、先頭行だけがないファイルからはパートを取り出せる
+        ["%%part workbook.json\n{}\n%%end\n", ["missing-header"], { "workbook.json": "{}\n" }],
+        ["%%part workbook.json\n{}\n%%part schema.json\n[]\n", ["missing-header", "missing-end"], { "workbook.json": "{}\n", "schema.json": "[]\n" }],
+      ])("%j", (single, expected, parts) => {
+        const r = unpackD21(single);
+        expect(reasons(r.diagnostics)).toEqual(expected);
+        expect(r.diagnostics[0]?.at).toEqual({ line: 1 });
+        expect(r.parts).toEqual(parts);
+      });
     });
 
-    test("先頭行がない・不正", () => {
-      for (const single of [
-        "",
-        "\n%%tsheet 0.1\n%%end\n",
-        "%%part workbook.json\n{}\n%%end\n",
-        "{}\n",
-        "%%tsheet\n%%end\n",
-        "%%tsheet0.1\n%%end\n",
-        " %%tsheet 0.1\n%%end\n",
-      ]) {
-        const errors = unpackErrors(single);
-        expect(reasons(errors)).toEqual(["missing-header"]);
-        expect(errors[0]?.at?.line).toBe(1);
-      }
+    describe("unsupported-version：対応していないバージョン", () => {
+      test.each(["0.2", "1.0", "0.1 ", " 0.1", "0.10", ""])("%j でもパートは取り出す", (version) => {
+        const r = unpackD21(`%%tsheet ${version}\n%%part workbook.json\n{}\n%%part data.jsonl\n%%end\n`);
+        expect(reasons(r.diagnostics)).toEqual(["unsupported-version"]);
+        expect(r.diagnostics[0]?.at).toEqual({ line: 1 });
+        expect(r.diagnostics[0]?.message).toContain(JSON.stringify(version));
+        expect(r.parts).toEqual({ "workbook.json": "{}\n", "data.jsonl": "" });
+      });
     });
 
-    test("対応していないバージョン", () => {
-      for (const single of ["%%tsheet 0.2\n%%end\n", "%%tsheet 1.0\n%%end\n", "%%tsheet 0.1 \n%%end\n", "%%tsheet  0.1\n%%end\n"]) {
-        expect(reasons(unpackErrors(single))).toEqual(["unsupported-version"]);
-      }
+    describe("invalid-path：不正なパートパス", () => {
+      test.each([
+        ["`..` のセグメント", "docs/../secret.md"],
+        ["先頭の `..`", "../workbook.json"],
+        ["`..` を含む名前", "docs/a..b/notes.md"],
+        ["絶対パス", "/workbook.json"],
+        ["ドライブ名", "C:/workbook.json"],
+        ["バックスラッシュ", "views\\default.view.json"],
+        ["バックスラッシュを含む", "views/a\\b.view.json"],
+        ["空のセグメント", "docs//notes.md"],
+        ["末尾の /", "docs/x/"],
+        ["`.` のセグメント", "views/./default.view.json"],
+        ["タブを含む", "docs/x\ty.md"],
+        ["順序の定まらないパス", "README.md"],
+        ["前に余分な空白", " workbook.json"],
+        ["後ろに余分な空白", "workbook.json "],
+        ["空文字列", ""],
+      ])("%s：そのパートの内容だけを読み飛ばす", (_label, path) => {
+        const r = unpackD21(`%%tsheet 0.1\n%%part workbook.json\n{}\n%%part ${path}\nx\n%%part data.jsonl\n{}\n%%end\n`);
+        expect(reasons(r.diagnostics)).toEqual(["invalid-path"]);
+        expect(r.diagnostics[0]?.at).toEqual({ line: 4 });
+        expect(r.parts).toEqual({ "workbook.json": "{}\n", "data.jsonl": "{}\n" });
+      });
+
+      test("不正なパスは順序の検査に使わない", () => {
+        // ../x を読み飛ばした後、schema.json は workbook.json と比較される
+        const r = unpackD21("%%tsheet 0.1\n%%part workbook.json\n{}\n%%part ../x\nx\n%%part schema.json\n[]\n%%end\n");
+        expect(reasons(r.diagnostics)).toEqual(["invalid-path"]);
+        expect(r.parts).toEqual({ "workbook.json": "{}\n", "schema.json": "[]\n" });
+      });
+
+      test("パスのない %%part 行は区切り行として解釈できない", () => {
+        const r = unpackD21("%%tsheet 0.1\n%%part\n%%end\n");
+        expect(reasons(r.diagnostics)).toEqual(["unknown-directive"]);
+        expect(r.parts).toEqual({});
+      });
     });
 
-    test.each([
-      ["`..` のセグメント", "docs/../secret.md"],
-      ["先頭の `..`", "../workbook.json"],
-      ["`..` を含む名前", "docs/a..b/notes.md"],
-      ["絶対パス", "/workbook.json"],
-      ["ドライブ名", "C:/workbook.json"],
-      ["バックスラッシュ", "views\\default.view.json"],
-      ["バックスラッシュを含む", "views/a\\b.view.json"],
-      ["空のセグメント", "docs//notes.md"],
-      ["末尾の /", "docs/x/"],
-      ["`.` のセグメント", "views/./default.view.json"],
-      ["タブを含む", "docs/x\ty.md"],
-      ["順序の定まらないパス", "README.md"],
-      ["前に余分な空白", " workbook.json"],
-      ["後ろに余分な空白", "workbook.json "],
-      ["空文字列", ""],
-    ])("不正なパートパス：%s", (_label, path) => {
-      const errors = unpackErrors(`%%tsheet 0.1\n%%part workbook.json\n{}\n%%part ${path}\nx\n%%end\n`);
-      expect(reasons(errors)).toEqual(["invalid-path"]);
-      expect(errors[0]?.at?.line).toBe(4);
-    });
-
-    test("不正なパートパス：パスのない %%part 行は区切り行として解釈できない", () => {
-      expect(reasons(unpackErrors("%%tsheet 0.1\n%%part\n%%end\n"))).toEqual(["unknown-directive"]);
-    });
-
-    test("パート順序の違反", () => {
-      const cases = [
+    describe("part-order：パート順序の違反・重複", () => {
+      test.each([
         ["schema.json", "workbook.json"],
         ["data.jsonl", "schema.json"],
         ["data.jsonl", "views/default.view.json"],
         ["docs/a/notes.md", "data.jsonl"],
         ["views/b.view.json", "views/a.view.json"],
         ["docs/b/notes.md", "docs/a/notes.md"],
-      ];
-      for (const [first, second] of cases) {
-        const errors = unpackErrors(`%%tsheet 0.1\n%%part ${first ?? ""}\nx\n%%part ${second ?? ""}\ny\n%%end\n`);
-        expect(reasons(errors)).toEqual(["part-order"]);
-        expect(errors[0]?.at).toEqual({ part: second, line: 4 });
-      }
+      ])("%s の後ろの %s：両方のパートを返す", (first, second) => {
+        const r = unpackD21(`%%tsheet 0.1\n%%part ${first}\nx\n%%part ${second}\ny\n%%end\n`);
+        expect(reasons(r.diagnostics)).toEqual(["part-order"]);
+        expect(r.diagnostics[0]?.at).toEqual({ part: second, line: 4 });
+        expect(r.parts).toEqual({ [first]: "x\n", [second]: "y\n" });
+      });
+
+      test("重複したパートは最初のものを残し、後のものの内容を読み飛ばす", () => {
+        const r = unpackD21("%%tsheet 0.1\n%%part workbook.json\n{}\n%%part workbook.json\n[]\n%%part schema.json\n{}\n%%end\n");
+        expect(reasons(r.diagnostics)).toEqual(["part-order"]);
+        expect(r.diagnostics[0]?.message).toContain("重複");
+        expect(r.diagnostics[0]?.at).toEqual({ part: "workbook.json", line: 4 });
+        expect(r.parts).toEqual({ "workbook.json": "{}\n", "schema.json": "{}\n" });
+      });
+
+      test("順序違反の後ろも、直前のパートと比較する", () => {
+        const r = unpackD21("%%tsheet 0.1\n%%part schema.json\ns\n%%part workbook.json\nw\n%%part data.jsonl\nd\n%%end\n");
+        expect(reasons(r.diagnostics)).toEqual(["part-order"]);
+        expect(r.parts).toEqual({ "schema.json": "s\n", "workbook.json": "w\n", "data.jsonl": "d\n" });
+      });
     });
 
-    test("パートの重複", () => {
-      const errors = unpackErrors("%%tsheet 0.1\n%%part workbook.json\n{}\n%%part workbook.json\n[]\n%%end\n");
-      expect(reasons(errors)).toEqual(["part-order"]);
-      expect(errors[0]?.message).toContain("重複");
+    describe("unknown-directive：解釈できない区切り行", () => {
+      test.each(["%%foo", "%%", "%%end ", "%%END", "%%endx", "%%tsheet 0.1", "%%part", "%%partx workbook.json"])(
+        "%j：その行だけを読み飛ばす",
+        (line) => {
+          const r = unpackD21(`%%tsheet 0.1\n%%part docs/x/notes.md\na\n${line}\nb\n%%end\n`);
+          expect(reasons(r.diagnostics)).toEqual(["unknown-directive"]);
+          expect(r.diagnostics[0]?.at).toEqual({ part: "docs/x/notes.md", line: 4 });
+          expect(r.parts).toEqual({ "docs/x/notes.md": "a\nb\n" });
+        },
+      );
+
+      test("パートの外では at.part を持たない", () => {
+        const r = unpackD21("%%tsheet 0.1\n%%foo\n%%part workbook.json\n{}\n%%end\n");
+        expect(reasons(r.diagnostics)).toEqual(["unknown-directive"]);
+        expect(r.diagnostics[0]?.at).toEqual({ line: 2 });
+        expect(r.parts).toEqual({ "workbook.json": "{}\n" });
+      });
     });
 
-    test("解釈できない区切り行", () => {
-      for (const line of ["%%foo", "%%", "%%end ", "%%END", "%%endx", "%%tsheet 0.1", "%%part", "%%partx workbook.json"]) {
-        const errors = unpackErrors(`%%tsheet 0.1\n%%part docs/x/notes.md\n${line}\n%%end\n`);
-        expect(reasons(errors)).toEqual(["unknown-directive"]);
-        expect(errors[0]?.at).toEqual({ part: "docs/x/notes.md", line: 3 });
-      }
+    describe("content-outside-part：最初の %%part より前に内容がある", () => {
+      test.each<[string, PartMap]>([
+        ["%%tsheet 0.1\n{}\n%%part workbook.json\n{}\n%%end\n", { "workbook.json": "{}\n" }],
+        ["%%tsheet 0.1\n\n%%end\n", {}],
+        ["%%tsheet 0.1\na\nb\nc\n%%part data.jsonl\n%%end\n", { "data.jsonl": "" }], // 同じ原因の診断は 1 件にまとめる
+      ])("%j：その内容を読み飛ばす", (single, parts) => {
+        const r = unpackD21(single);
+        expect(reasons(r.diagnostics)).toEqual(["content-outside-part"]);
+        expect(r.diagnostics[0]?.at).toEqual({ line: 2 });
+        expect(r.parts).toEqual(parts);
+      });
     });
 
-    test("最初の %%part より前に内容がある", () => {
-      expect(reasons(unpackErrors("%%tsheet 0.1\n{}\n%%part workbook.json\n{}\n%%end\n"))).toEqual(["content-outside-part"]);
-      expect(reasons(unpackErrors("%%tsheet 0.1\n\n%%end\n"))).toEqual(["content-outside-part"]);
-      // 同じ原因の診断は 1 件にまとめる
-      expect(reasons(unpackErrors("%%tsheet 0.1\na\nb\nc\n%%end\n"))).toEqual(["content-outside-part"]);
+    describe("content-after-end：%%end の後ろに内容がある", () => {
+      test.each(["\n", "x", "x\n", "%%part data.jsonl\n%%end\n", " "])("%j：後ろをすべて読み飛ばす", (tail) => {
+        const r = unpackD21(`%%tsheet 0.1\n%%part workbook.json\n{}\n%%end\n${tail}`);
+        expect(reasons(r.diagnostics)).toEqual(["content-after-end"]);
+        expect(r.diagnostics[0]?.at).toEqual({ line: 5 });
+        expect(r.parts).toEqual({ "workbook.json": "{}\n" });
+      });
     });
 
-    test("%%end の後ろに内容がある", () => {
-      for (const tail of ["\n", "x", "x\n", "%%part data.jsonl\n%%end\n", " "]) {
-        const errors = unpackErrors(`%%tsheet 0.1\n%%part workbook.json\n{}\n%%end\n${tail}`);
-        expect(reasons(errors)).toEqual(["content-after-end"]);
-        expect(errors[0]?.at?.line).toBe(5);
-      }
-    });
-
-    test("複数の構造不正をまとめて報告する", () => {
-      const errors = unpackErrors("%%tsheet 0.1\n%%part schema.json\n%%part ../x\n%%part workbook.json\n%%bad\n");
-      expect(reasons(errors)).toEqual(["invalid-path", "part-order", "unknown-directive", "missing-end"]);
+    test("複数の構造不正をまとめて報告し、解析できたパートを返す", () => {
+      const r = unpackD21("%%tsheet 0.1\n%%part schema.json\n%%part ../x\n%%part workbook.json\n%%bad\n");
+      expect(reasons(r.diagnostics)).toEqual(["invalid-path", "part-order", "unknown-directive", "missing-end"]);
+      expect(r.diagnostics.map((e) => e.at?.line)).toEqual([3, 4, 5, 6]);
+      expect(r.parts).toEqual({ "schema.json": "", "workbook.json": "" });
     });
 
     test("正しいファイルでは発生しない", () => {
@@ -345,9 +440,8 @@ describe("unpack", () => {
         "%%%end\n%single\n\n" +
         "%%end\n";
       const r = unpack(single);
-      expect(r.ok).toBe(true);
-      expect(r.ok && r.diagnostics).toEqual([]);
-      expect(pack(unpackOk(single))).toBe(single);
+      expect(r.diagnostics).toEqual([]);
+      expect(pack(r.parts)).toBe(single);
     });
   });
 });
