@@ -163,7 +163,7 @@ MVP では次を扱いません：xlsx の入出力（Power Query で代替）�
 
 ## ライセンス
 
-未定（決定後に追記します）。
+Apache License 2.0（[LICENSE](LICENSE)）。仕様書（`spec/`）・メタスキーマ（`meta/`）・エンジン API の型定義（`engine/`）・コードのすべてに同じライセンスを適用します。
 
 ---
 
