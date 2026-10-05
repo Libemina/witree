@@ -13,3 +13,4 @@ export {
   type MetaPartKind,
   type StructureErrorReason,
 } from "./structure.ts";
+export { createTestHost, encodeUtf8, isUuidV4, sha256, sha256Hex, UUID_V4_PATTERN, type TestHost, type TestHostOptions } from "./host/index.ts";
