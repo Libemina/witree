@@ -104,7 +104,7 @@
         ],
         "properties": {
           "field": {
-            "$ref": "#/$defs/fieldRef"
+            "$ref": "#/$defs/sortRef"
           },
           "dir": {
             "enum": [
@@ -300,8 +300,17 @@
       "type": "string",
       "pattern": "^([A-Z][A-Za-z0-9_]{0,63}\\.)?[a-z][A-Za-z0-9_]{0,63}$"
     },
+    "systemColumn": {
+      "description": "システム項目の特殊列 $created / $updated / $createdBy / $updatedBy（本体仕様 §11.2）",
+      "enum": [
+        "$created",
+        "$updated",
+        "$createdBy",
+        "$updatedBy"
+      ]
+    },
     "columnRef": {
-      "description": "fieldRef、または特殊列 $title / $type / $outline / $id",
+      "description": "fieldRef、特殊列 $title / $type / $outline / $id、またはシステム項目の特殊列",
       "oneOf": [
         {
           "$ref": "#/$defs/fieldRef"
@@ -313,6 +322,20 @@
             "$outline",
             "$id"
           ]
+        },
+        {
+          "$ref": "#/$defs/systemColumn"
+        }
+      ]
+    },
+    "sortRef": {
+      "description": "fieldRef、またはシステム項目の特殊列",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/fieldRef"
+        },
+        {
+          "$ref": "#/$defs/systemColumn"
         }
       ]
     },

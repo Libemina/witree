@@ -501,7 +501,7 @@ string   = '"' { char | '""' } '"' ;          (* "" で " を表す *)
 
 ### 11.2 システム項目
 
-`created` / `updated` / `createdBy` / `updatedBy` は、スキーマで定義せず、エンジンだけが書き込む項目である。式からは `CREATED()` / `UPDATED()` / `CREATED_BY()` / `UPDATED_BY()` で参照でき、View では特殊列 `$created` などで表示・ソート・フィルタに使える（View 定義仕様 §6.1）。
+`created` / `updated` / `createdBy` / `updatedBy` は、スキーマで定義せず、エンジンだけが書き込む項目である。式からは `CREATED()` / `UPDATED()` / `CREATED_BY()` / `UPDATED_BY()` で参照でき、View では特殊列 `$created` などで表示・ソート・フィルタに使える（View 定義仕様 §6.1）。エンジンが書き込む時点の詳細はエンジン API 仕様 §6.6、マージ時の扱いは同 §10.2 に定める。
 
 | 項目 | 内容 | 書き込む時点 |
 |---|---|---|
