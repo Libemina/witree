@@ -4,12 +4,12 @@
 //
 // 検証関数は Ajv の standalone コード生成で作り、コミットしている（src/generated/、`pnpm generate`）。
 //
-// 診断コードについて（PR の「仕様の確認事項」にも記載）：
-//  - data.jsonl の行は D01（本体仕様 §12.2「JSON の構文エラー、またはレコード形式への違反」）。
-//  - schema.json・workbook.json・View 定義・marks の構造不正には、仕様がコードを定めていない（本体仕様 §12 の
-//    手順 1 と View 仕様 §9 の手順 1 は「構造検証（メタスキーマ）」を挙げるが、S 系・D 系・V 系の表に該当する
-//    コードがない）。ここでは暫定として、各系列の未使用の番号 00 を使う（S00・D00・V00）。仕様で番号が定まったら
-//    STRUCTURE_DIAGNOSTIC_CODES を直す。
+// 診断コード（本体仕様 §12.1・§12.2、View 仕様 §9）：
+//  - workbook.json は D24、schema.json は S14、data.jsonl の行は D01、View 定義と marks は V16。
+//    いずれも「JSON の構文エラー、またはメタスキーマへの違反」で、重大度は error。
+//  - S14 は S 系の error なので、データは読み取り専用で開く（本体仕様 §12 の手順 1）。V16 がある View は開けないが、
+//    ワークブック自体は他の View で開ける（View 仕様 §9）。読み取り専用の判定は読み込み（L-05）の役割で、ここでは
+//    診断を返すだけにとどめる。
 //
 // 仕様に明記がなく、保守的に解釈した点：
 //  1. 先頭の BOM と CRLF は受理する（本体仕様 §2.2 規則 1 の読み込み時の扱いに揃える）。
@@ -33,13 +33,13 @@ export type StructureErrorReason =
   | "empty-line" // data.jsonl の空行
   | "schema"; // メタスキーマへの違反（`keyword`・`instancePath` などを併せて持つ）
 
-/** パートの種類ごとの診断コード。record 以外は暫定（冒頭の注）。 */
+/** パートの種類ごとの診断コード（冒頭の注）。 */
 export const STRUCTURE_DIAGNOSTIC_CODES: Readonly<Record<MetaPartKind, string>> = {
-  workbook: "D00",
-  schema: "S00",
+  workbook: "D24",
+  schema: "S14",
   record: "D01",
-  view: "V00",
-  marks: "V00",
+  view: "V16",
+  marks: "V16",
 };
 
 const META_SCHEMA_IDS: Readonly<Record<MetaPartKind, string>> = {

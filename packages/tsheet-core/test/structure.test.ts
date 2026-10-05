@@ -181,9 +181,9 @@ describe("data.jsonl のレコード（D01）", () => {
   });
 });
 
-describe("schema.json（S00）", () => {
-  test("コードは暫定の S00", () => {
-    expect(STRUCTURE_DIAGNOSTIC_CODES.schema).toBe("S00");
+describe("schema.json（S14）", () => {
+  test("コードは S14", () => {
+    expect(STRUCTURE_DIAGNOSTIC_CODES.schema).toBe("S14");
   });
 
   test("適合するスキーマでは発生しない", () => {
@@ -192,7 +192,7 @@ describe("schema.json（S00）", () => {
 
   test("JSON の構文エラー：行番号なし・パート名付き", () => {
     const ds = validateSchemaJson("{ not json");
-    expectAll(ds, "S00", { part: "schema.json" });
+    expectAll(ds, "S14", { part: "schema.json" });
     expect(reasons(ds)).toEqual(["json"]);
   });
 
@@ -202,7 +202,7 @@ describe("schema.json（S00）", () => {
         delete s["types"];
       }),
     );
-    expectAll(ds, "S00", { part: "schema.json" });
+    expectAll(ds, "S14", { part: "schema.json" });
     expect(keywords(ds)).toEqual(["required"]);
     expect(ds[0]?.detail?.["metaSchema"]).toBe("urn:tsheet:meta:schema:0.1");
   });
@@ -213,7 +213,7 @@ describe("schema.json（S00）", () => {
         s["schemaVersion"] = "1";
       }),
     );
-    expectAll(ds, "S00", { part: "schema.json" });
+    expectAll(ds, "S14", { part: "schema.json" });
     expect(keywords(ds)).toEqual(["type"]);
     expect(paths(ds)).toEqual(["/schemaVersion"]);
   });
@@ -224,7 +224,7 @@ describe("schema.json（S00）", () => {
         s["unknownKey"] = 1;
       }),
     );
-    expectAll(ds, "S00", { part: "schema.json" });
+    expectAll(ds, "S14", { part: "schema.json" });
     expect(keywords(ds)).toEqual(["additionalProperties"]);
   });
 
@@ -244,7 +244,7 @@ describe("schema.json（S00）", () => {
   // `if`・`unevaluatedProperties` の違反も報告される（allErrors）。先頭が format であることを確かめる。
   test("pattern が正規表現として不正：keyword は format（regex）", () => {
     const ds = validateSchemaJson(withPattern("(unclosed"));
-    expectAll(ds, "S00", { part: "schema.json" });
+    expectAll(ds, "S14", { part: "schema.json" });
     expect(keywords(ds)[0]).toBe("format");
     expect(String(paths(ds)[0])).toMatch(/\/pattern$/);
     expect(ds[0]?.detail?.["params"]).toEqual({ format: "regex" });
@@ -263,9 +263,9 @@ describe("schema.json（S00）", () => {
   });
 });
 
-describe("workbook.json（D00）", () => {
-  test("コードは暫定の D00", () => {
-    expect(STRUCTURE_DIAGNOSTIC_CODES.workbook).toBe("D00");
+describe("workbook.json（D24）", () => {
+  test("コードは D24", () => {
+    expect(STRUCTURE_DIAGNOSTIC_CODES.workbook).toBe("D24");
   });
 
   test("適合するマニフェストでは発生しない", () => {
@@ -274,7 +274,7 @@ describe("workbook.json（D00）", () => {
 
   test("JSON の構文エラー", () => {
     const ds = validateWorkbookJson("");
-    expectAll(ds, "D00", { part: "workbook.json" });
+    expectAll(ds, "D24", { part: "workbook.json" });
     expect(reasons(ds)).toEqual(["json"]);
   });
 
@@ -284,7 +284,7 @@ describe("workbook.json（D00）", () => {
         delete w["dataSchemaVersion"];
       }),
     );
-    expectAll(ds, "D00", { part: "workbook.json" });
+    expectAll(ds, "D24", { part: "workbook.json" });
     expect(keywords(ds)).toEqual(["required"]);
     expect(ds[0]?.detail?.["metaSchema"]).toBe("urn:tsheet:meta:workbook:0.1");
   });
@@ -295,7 +295,7 @@ describe("workbook.json（D00）", () => {
         w["specVersion"] = "0.2";
       }),
     );
-    expectAll(ds, "D00", { part: "workbook.json" });
+    expectAll(ds, "D24", { part: "workbook.json" });
     expect(keywords(ds)).toEqual(["const"]);
   });
 
@@ -305,7 +305,7 @@ describe("workbook.json（D00）", () => {
         w["settings"] = { unknown: 1 };
       }),
     );
-    expectAll(ds, "D00", { part: "workbook.json" });
+    expectAll(ds, "D24", { part: "workbook.json" });
     expect(keywords(ds)).toEqual(["additionalProperties"]);
     expect(paths(ds)).toEqual(["/settings"]);
   });
@@ -315,11 +315,11 @@ describe("workbook.json（D00）", () => {
   });
 });
 
-describe("View 定義（V00）", () => {
+describe("View 定義（V16）", () => {
   const part = "views/default.view.json";
 
-  test("コードは暫定の V00", () => {
-    expect(STRUCTURE_DIAGNOSTIC_CODES.view).toBe("V00");
+  test("コードは V16", () => {
+    expect(STRUCTURE_DIAGNOSTIC_CODES.view).toBe("V16");
   });
 
   test("適合する View 定義では発生しない", () => {
@@ -328,7 +328,7 @@ describe("View 定義（V00）", () => {
 
   test("JSON の構文エラー", () => {
     const ds = validateViewJson("[", part);
-    expectAll(ds, "V00", { part });
+    expectAll(ds, "V16", { part });
     expect(reasons(ds)).toEqual(["json"]);
   });
 
@@ -339,7 +339,7 @@ describe("View 定義（V00）", () => {
       }),
       part,
     );
-    expectAll(ds, "V00", { part });
+    expectAll(ds, "V16", { part });
     expect(keywords(ds)).toEqual(["required"]);
     expect(ds[0]?.detail?.["metaSchema"]).toBe("urn:tsheet:meta:view:0.1");
   });
@@ -351,7 +351,7 @@ describe("View 定義（V00）", () => {
       }),
       part,
     );
-    expectAll(ds, "V00", { part });
+    expectAll(ds, "V16", { part });
     expect(keywords(ds)).toEqual(["enum"]);
     expect(paths(ds)).toEqual(["/mode"]);
   });
@@ -363,17 +363,17 @@ describe("View 定義（V00）", () => {
       }),
       part,
     );
-    expectAll(ds, "V00", { part });
+    expectAll(ds, "V16", { part });
     expect(keywords(ds)).toEqual(["additionalProperties"]);
   });
 });
 
-describe("手動書式 marks（V00）", () => {
+describe("手動書式 marks（V16）", () => {
   const part = "views/default.marks.json";
   const good = examplePart("param-sheet", part);
 
-  test("コードは暫定の V00", () => {
-    expect(STRUCTURE_DIAGNOSTIC_CODES.marks).toBe("V00");
+  test("コードは V16", () => {
+    expect(STRUCTURE_DIAGNOSTIC_CODES.marks).toBe("V16");
   });
 
   test("適合する marks では発生しない", () => {
@@ -382,7 +382,7 @@ describe("手動書式 marks（V00）", () => {
 
   test("JSON の構文エラー", () => {
     const ds = validateMarksJson("{,}", part);
-    expectAll(ds, "V00", { part });
+    expectAll(ds, "V16", { part });
     expect(reasons(ds)).toEqual(["json"]);
   });
 
@@ -393,7 +393,7 @@ describe("手動書式 marks（V00）", () => {
       }),
       part,
     );
-    expectAll(ds, "V00", { part });
+    expectAll(ds, "V16", { part });
     expect(keywords(ds)).toEqual(["required"]);
     expect(ds[0]?.detail?.["metaSchema"]).toBe("urn:tsheet:meta:marks:0.1");
   });
@@ -405,7 +405,7 @@ describe("手動書式 marks（V00）", () => {
       }),
       part,
     );
-    expectAll(ds, "V00", { part });
+    expectAll(ds, "V16", { part });
     expect(keywords(ds)).toContain("propertyNames");
   });
 
@@ -419,7 +419,7 @@ describe("手動書式 marks（V00）", () => {
       }),
       part,
     );
-    expectAll(ds, "V00", { part });
+    expectAll(ds, "V16", { part });
     expect(keywords(ds)).toEqual(["type"]);
     expect(String(paths(ds)[0])).toMatch(/^\/records\/[0-9a-f-]+\/style\/bold$/);
   });
@@ -432,7 +432,7 @@ describe("手動書式 marks（V00）", () => {
       }),
       part,
     );
-    expectAll(ds, "V00", { part });
+    expectAll(ds, "V16", { part });
     expect(keywords(ds)).toEqual(["type", "type"]);
   });
 });
@@ -449,11 +449,11 @@ describe("validateParts", () => {
     };
     const ds = validateParts(parts);
     const summary = ds.map((d) => [d.code, d.at?.part, d.at?.line]);
-    expect(summary).toContainEqual(["D00", "workbook.json", undefined]);
+    expect(summary).toContainEqual(["D24", "workbook.json", undefined]);
     expect(summary).toContainEqual(["D01", "data.jsonl", 2]);
-    expect(summary.filter(([code]) => code === "V00").every(([, part]) => part === "views/default.view.json")).toBe(true);
-    expect(summary.some(([code]) => code === "V00")).toBe(true);
-    expect(summary.some(([code]) => code === "S00")).toBe(false);
+    expect(summary.filter(([code]) => code === "V16").every(([, part]) => part === "views/default.view.json")).toBe(true);
+    expect(summary.some(([code]) => code === "V16")).toBe(true);
+    expect(summary.some(([code]) => code === "S14")).toBe(false);
   });
 
   test("診断の順序はキーの順序によらず、マニフェスト → スキーマ → データ → views/ で固定される", () => {

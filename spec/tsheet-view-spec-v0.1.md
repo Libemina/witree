@@ -304,7 +304,7 @@ views/
 
 View の処理は、本体仕様のデータ検証（D 系）と実効値の計算が終わった後に行う。
 
-1. View 定義と marks の構造検証（メタスキーマ）
+1. View 定義と marks の構造検証（メタスキーマ違反は V16）
 2. フィールド参照・型・式の意味検証（V 系）
 3. `tree.types` による絞り込み → `filter` → `sort` の順で表示集合と並びを決める
 4. 書式の適用（§8.3）
@@ -326,6 +326,7 @@ View の処理は、本体仕様のデータ検証（D 系）と実効値の計�
 | V13 | error | `tree.types` のどの型も `crosstab.sourceType` を子に持たない、`key` / `value` のフィールド型が要件を満たさない、`fn` と `value` の型が合わない、`keys` の範囲や `step` が `key` の型と合わない |
 | V14 | error | `crosstab` の View の `columns` に `tree.types` 以外の型のフィールドがある |
 | V15 | error | `labelExpr` がノードのフィールドや `parent.` を参照している |
+| V16 | error | View 定義または marks の JSON 構文エラー、またはメタスキーマ（`meta/view.v0.1.json`・`meta/marks.v0.1.json`）への違反。該当する View は開けない |
 
 V 系の `error` がある View は開けないが、ワークブック自体は他の View で開ける。
 
