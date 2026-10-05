@@ -12,7 +12,7 @@ tsheet-core は、tsheet 形式のワークブックを読み込み、検証・�
 | 決定的 | 同じ `Host` の応答と同じ入力に対して、常に同じ出力（`serialize()` は 1 バイトも違わない） |
 | Op 単位 | すべての変更は自己完結した Op の列（トランザクション）として渡す。エンジンが状態を勝手に変えることはない |
 | 責務の集中 | 検証・計算・射影（フィルタ・ソート・crosstab・書式判定）・逆操作の生成・マージはエンジンが行う。UI は表示と入力、Host はファイル・ロック・スナップショット・自動保存を担う |
-| 非同期・Result 型 | 外部インターフェースはすべて `Promise` を返す。拒否・衝突・診断は戻り値で返し、例外はエンジン内部の不整合にのみ使う |
+| 非同期・Result 型 | `Engine` のメソッドはすべて `Promise` を返す（Worker 越しに呼ぶため、同期のメソッドは置かない）。エンジンの状態に依存しない純粋関数（`orderBetween`、§5.2）は `Engine` に含めず、tsheet-core の単独エクスポートとして呼び出し側のスレッドで同期に呼ぶ（ADR-0002）。拒否・衝突・診断は戻り値で返し、例外はエンジン内部の不整合にのみ使う |
 
 ## 2. 構成
 
@@ -60,7 +60,9 @@ CLI（Node）  ──直接呼び出し──▶  tsheet-core          ◀──
 
 ### 5.2 自己完結性
 
-Op は「選択中の行の下」「最後の兄弟の後ろ」のような相対指定を持たない。`create` と `move` の `order` は呼び出し側が `orderBetween(a, b)` で求めて渡し、`create` の `id` は `newId()` で採番して渡す。これにより、同じ Op の列をどの環境で再生しても同じ結果になり、Undo・スナップショット比較・将来の CRDT 化に共通の基盤ができる。
+Op は「選択中の行の下」「最後の兄弟の後ろ」のような相対指定を持たない。`create` と `move` の `order` は呼び出し側が `orderBetween(a, b)` で求めて渡し、`create` の `id` は呼び出し側の `Host.ids.newId()` で採番して渡す。これにより、同じ Op の列をどの環境で再生しても同じ結果になり、Undo・スナップショット比較・将来の CRDT 化に共通の基盤ができる。
+
+`orderBetween(a: Order | null, b: Order | null): Order` は、同じ親の下で隣接する 2 つの `order` の間に入る値を返す純粋関数である（本体仕様 §11「order の扱い」。`a` が `null` なら先頭、`b` が `null` なら末尾への挿入。`a < b` なら `a < 結果 < b` がコードポイント順で成り立つ）。エンジンの状態に依存しないため `Engine` のメソッドではなく、tsheet-core の単独エクスポート（契約の `OrderBetween` 型）として提供し、UI は Worker を経由せずメインスレッドで同期に呼ぶ。`id` の採番も同様に `Engine` の責務ではなく、`Host` の責務である（§3）。
 
 ### 5.3 トランザクション
 
@@ -223,11 +225,13 @@ View 定義は JSON のキー単位（`columns` は `field` をキー、`rules` 
 
 | 種別 | 形式 |
 |---|---|
-| 要求 | `{ id, method, params }`。`method` は `Engine` のメソッド名、`params` は引数の配列 |
+| 要求 | `{ id, method, params }`。`method` は `Engine` のメソッド名、`params` は引数の配列。`Engine` のメソッドはすべて `Promise` を返すので、すべての要求を同じ形式で扱える |
 | 応答 | `{ id, result }` または `{ id, error: { code, message, data } }`。`error` はエンジン内部エラー（例外相当）にのみ使い、拒否や衝突は `result` の `Result` 型で返す |
 | イベント | `changes`（`apply` / `resolve` 後）、`diagnostics`（診断の増減）、`progress`（`load` や大規模な `apply` の進捗） |
 
 要求は到着順に直列で処理する。`project` のような読み取りも `apply` と同じキューに入るため、UI は「apply の応答を待ってから project を呼ぶ」だけで整合が取れる。大きな `PartMap` の受け渡しは、Worker の構造化クローンのコストを避けるため、文字列は `Transferable`（`ArrayBuffer`）で渡してよい。
+
+`orderBetween` と `id` の採番はメッセージにならない。`orderBetween` は tsheet-core の単独エクスポート（§5.2）を UI がメインスレッドで直接呼び、`id` は UI 側の `Host.ids.newId()` から取る。Op を組み立てる時点で Worker との往復が不要になるため、入力のたびに応答を待つ必要がない。
 
 ## 13. エラーコード（E 系）
 
@@ -242,7 +246,7 @@ View 定義は JSON のキー単位（`columns` は `field` をキー、`rules` 
 
 ## 14. バージョニングと決定性の保証
 
-- エンジンのパッケージは semver で管理し、`version()` で `{ engine, spec }` を返す。API の破壊的変更はメジャーバージョンで示す。仕様の `specVersion` とは独立に進める。
+- エンジンのパッケージは semver で管理し、`version()` で `{ engine, spec }` を返す（他のメソッドと同じく `Promise`）。API の破壊的変更はメジャーバージョンで示す。仕様の `specVersion` とは独立に進める。
 - 型定義から JSON Schema（Op・Transaction・Message 用）を生成し、CLI の入力検証と MCP サーバーのスキーマに使う。
 - CI では、Node.js とブラウザ（Vitest ブラウザモード）の両方で同じ `PartMap` を `load` → `serialize` し、`contentHash()` が一致することを確認する（ゴールデンテスト）。トランザクションの適用と `inverse` の適用で元に戻ることも同様に検証する。
 
