@@ -21,3 +21,6 @@ target/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Claude Code のエージェント用 worktree
+.claude/worktrees/
