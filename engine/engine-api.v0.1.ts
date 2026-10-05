@@ -237,10 +237,21 @@ export interface Engine {
   unpack(single: string): Promise<Result<PartMap>>;
 
   // ユーティリティ
-  orderBetween(a: Order | null, b: Order | null): Order;
-  newId(): NodeId;
-  version(): { engine: string; spec: "0.1" };
+  version(): Promise<{ engine: string; spec: "0.1" }>;
 }
+// Engine のメソッドはすべて Promise を返す（仕様 §1）。同期の orderBetween / newId は Engine に含めない（ADR-0002）：
+// - orderBetween はエンジンの状態に依存しない純粋関数なので、tsheet-core の単独エクスポート（下記 OrderBetween）とする
+// - id の採番は Host の責務（Host.ids.newId()）であり、呼び出し側は自分の Host から取る
+
+// ---------------------------------------------------------------------------
+// 単独エクスポート（Engine に属さない純粋関数。Worker メッセージにはならず、呼び出し側のスレッドで同期に呼ぶ）
+// ---------------------------------------------------------------------------
+/**
+ * a と b の間に入る order を返す（仕様 §5.2、本体仕様 §11「order の扱い」）。
+ * a が null なら先頭、b が null なら末尾への挿入。a < b なら a < 結果 < b（コードポイント順）。
+ * tsheet-core が `orderBetween` としてエクスポートする実装はこの型に従う（L-09）。
+ */
+export type OrderBetween = (a: Order | null, b: Order | null) => Order;
 
 // ---------------------------------------------------------------------------
 // Worker メッセージ
