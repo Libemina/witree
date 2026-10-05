@@ -155,7 +155,7 @@ MVP は **全体再計算＋メモ化** とする。`apply` のたびに、依�
 `project(view, opts)` は View 仕様の処理順序（`tree.types` → `filter` → `sort` → 書式）を適用し、`Projection` を返す。
 
 - `rows` は表示順で、折りたたみは反映しない。折りたたみは個人状態なので、UI が `opts.collapsed` に渡すと、その子孫を除いた行だけを返す。
-- `cells` のキーは列の `field`（`$title` などの特殊列を含む）、crosstab では列のキー値、行合計は `$rowTotal`。
+- `cells` のキーは列の `field`（`$title` などの特殊列、計算列の `$expr:<id>` を含む）、crosstab では列のキー値、行合計は `$rowTotal`。計算列（View 仕様 §6.4）は `Projection.columns` の `kind` が `"computed"` で、セルの `source` は `"formula"`（評価されない行・空の結果は `"empty"`）、`editable` は常に `false`。
 - `CellView.editable` は、計算フィールド・継承のみ・読み取り専用列・crosstab の 2 件以上のセル・View の `readOnly` をすべて考慮した最終判定である。UI は独自に判定しない。
 - `CellView.style` は marks と rules を View 仕様 §8.3 の順で合成した結果である。
 - crosstab の空セルへの入力は、UI が `create`（`parent` = 行、`key` = 列の値、`value` = 入力値）を組み立てて `apply` する。エンジンはそのために `Projection.columns` にキー値を返す。
@@ -164,7 +164,7 @@ MVP は **全体再計算＋メモ化** とする。`apply` のたびに、依�
 
 ## 9. 式 API と入力ガード
 
-`parseExpr` は構文・参照・型を検証して `ExprInfo`（結果型、参照するフィールド、使用関数）を返す。rules・checks・filter・formula を UI で編集するときの即時検証に使う。`evaluate` は任意のノードを文脈に式を評価し、数式バーのプレビューや検証ルールの試験に使う。
+`parseExpr` は構文・参照・型を検証して `ExprInfo`（結果型、参照するフィールド、使用関数）を返す。rules・checks・filter・formula・View の計算列（`purpose: "column"`）を UI で編集するときの即時検証に使う。`evaluate` は任意のノードを文脈に式を評価し、数式バーのプレビューや検証ルールの試験に使う。
 
 式は副作用も I/O も持たない宣言的な言語であり、外部へのアクセス経路はない。したがってリスクは **サービス拒否（過大な計算）** に限られる。エンジンは、UI から渡された式にも、ファイルから読み込んだ式（他者が作ったワークブック）にも、同じ制限を課す。
 

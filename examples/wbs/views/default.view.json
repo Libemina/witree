@@ -13,6 +13,7 @@
     { "field": "end", "width": 100, "format": { "date": "YYYY/MM/DD" } },
     { "field": "days", "width": 70 },
     { "field": "progress", "width": 80, "format": { "decimals": 0 } },
+    { "field": "$expr:remaining", "expr": "effort * (100 - progress) / 100", "label": "残工数", "width": 80, "format": { "decimals": 1 } },
     { "field": "dependsOn", "width": 220 }
   ],
   "rules": [

@@ -160,7 +160,7 @@ export interface RowView {
 
 export interface Projection {
   view: ViewName;
-  columns: { key: string; label: string; width: number; pinned: boolean; align: string; kind: "field" | "special" | "crosstab" | "total" }[];
+  columns: { key: string; label: string; width: number; pinned: boolean; align: string; kind: "field" | "special" | "computed" | "crosstab" | "total" }[];
   rows: RowView[];               // 表示順（sort 適用済み、折りたたみは反映しない）
   totals?: Record<string, CellView>;                     // crosstab の columnTotal
   diagnostics: Diagnostic[];     // V 系
@@ -174,7 +174,7 @@ export interface ProjectionOptions {
 // ---------------------------------------------------------------------------
 // 式
 // ---------------------------------------------------------------------------
-export interface ExprContext { type: TypeName | "Root" | "none"; view?: ViewName; purpose: "formula" | "rollupWhere" | "check" | "filter" | "rule" | "labelExpr" | "adhoc" }
+export interface ExprContext { type: TypeName | "Root" | "none"; view?: ViewName; purpose: "formula" | "rollupWhere" | "check" | "filter" | "rule" | "labelExpr" | "column" | "adhoc" }
 export interface ExprInfo { resultType: string; references: { self: FieldId[]; parent: FieldId[]; root: FieldId[] }; functions: string[] }
 export interface ExprLimits { maxLength: 4096; maxDepth: 64; maxSteps: 100000; maxRegexLength: 512; maxStringLength: 65536 }
 
