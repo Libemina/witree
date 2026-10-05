@@ -114,6 +114,24 @@ Op は「選択中の行の下」「最後の兄弟の後ろ」のような相�
 
 履歴（Undo / Redo スタック）は Host が保持する（セッション内。自動保存の後も遡れるようにするため、履歴はファイルに保存せず、エンジンは逆操作の生成だけを担う）。外部変更を取り込んだ後（§10）も履歴は保持し、対象ノードが存在しなくなった Op は `apply` 時に E08 で拒否されるため、Host はそのトランザクションを飛ばして次の履歴に進み、利用者に通知する。
 
+### 6.6 システム項目の書き込み
+
+`apply` は、本体仕様 §11.2 のシステム項目（`created` / `updated` / `createdBy` / `updatedBy`）を次の表に従って書き込む。システム項目は `values` の外にあり、Op で直接は書けない（スキーマにないフィールドへの `set` は E01）。書き込みは Op の副作用であり、`inverse` にも Op としては現れない。
+
+| Op | `created` / `createdBy` | `updated` / `updatedBy` |
+|---|---|---|
+| `create` | 書く | 書く（`created` と同じ値） |
+| `set` / `unset` / `setDoc` | 変えない | 対象ノードに書く |
+| `move` | 変えない | 対象ノードに書く。旧親・新親は変えない |
+| `delete` | — | 親・祖先は変えない |
+| エンジンが自動生成する Op（§6.3 の参照解除、§6.4 のスキーマ変更に伴う値の除去・変換） | 変えない | 書き換えたノードに書く |
+| Undo / Redo（`inverse` の適用） | 変えない（`delete` の逆操作で再作成するノードは `create` として書く） | 対象ノードに書く（元の値には戻さない） |
+| データの書き換えを伴わない `SchemaOp`・`ViewOp`・`MarksOp`・`ParamOp` | 変えない | 変えない |
+
+- `created` / `updated` の値は `Host.clock.now()`、`createdBy` / `updatedBy` の値は `Host.actor` である（§3）。
+- 子の追加・削除・移動は親の `updated` を変えない（ロールアップの再計算は変更ではない。本体仕様 §11.2）。`preview` は状態を変えないので何も書かず、`load` は欠けている項目を補わない。
+- `createdBy` / `updatedBy` は、`settings.privacy.recordActors` が `true`（既定）で、かつ `Host.actor` が設定されているときだけ、`created` / `updated` と同時に同じ Op で書く。どちらかを満たさないときは書かず、`updated` を書く Op では既存の `updatedBy` を除去する（`updated` と `updatedBy` が別の変更を指す状態を作らない）。`createdBy` は `create` 以外では変えない。`recordActors: false` のワークブックに残っている識別子は `apply` では触れず、保存時の正規化で除去する（本体仕様 §2.5、D23）。`created` / `updated` は `recordActors` の影響を受けない。
+
 ## 7. 計算
 
 ### 7.1 実効値
@@ -177,6 +195,8 @@ MVP は **全体再計算＋メモ化** とする。`apply` のたびに、依�
 | 一方が `set`、他方が `unset` | 衝突 `field`（`undefined` を値として扱う） |
 
 「未設定」と `null` は区別して比較する。比較は保存形式の値で行い、実効値は使わない。
+
+システム項目（`created` / `updated` / `createdBy` / `updatedBy`。本体仕様 §11.2）は上の表の対象外で、衝突にしない。両側に残るレコードについて、`created` は local と disk の小さい方、`updated` は大きい方を採る（RFC 3339 の UTC 固定表記なので、コードポイント順の比較が時刻順と一致する）。`createdBy` / `updatedBy` は、それぞれ `created` / `updated` の値を採った側の値に従う（その側に無ければ書かない）。片方にだけある項目はその値を採る。この規則は他のフィールドが衝突しているレコードにも適用し、`resolve()` で local / disk を選んでも変えない（解決のトランザクション自体による `updated` の書き込みは §6.6 に従う）。
 
 ### 10.3 View・marks・params
 
