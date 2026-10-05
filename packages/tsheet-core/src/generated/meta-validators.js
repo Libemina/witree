@@ -3717,7 +3717,7 @@ return errors === 0;
 validate21.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
 export const record = validate38;
-const schema64 = {"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"urn:tsheet:meta:record:0.1","title":"tsheet形式データレコード v0.1","description":"data.jsonl の1行。values の中身はワークブックの schema.json に従って検証する（仕様書 §12 の D 系診断）。","type":"object","required":["id","type","parent","order","values"],"properties":{"id":{"$ref":"#/$defs/uuid"},"type":{"type":"string","pattern":"^[A-Z][A-Za-z0-9_]{0,63}$"},"parent":{"oneOf":[{"$ref":"#/$defs/uuid"},{"type":"null"}]},"order":{"type":"string","pattern":"^[0-9A-Za-z]+$"},"created":{"$ref":"#/$defs/utcDateTime"},"updated":{"$ref":"#/$defs/utcDateTime"},"createdBy":{"type":"string","minLength":1,"maxLength":254},"updatedBy":{"type":"string","minLength":1,"maxLength":254},"values":{"type":"object","propertyNames":{"pattern":"^[a-z][A-Za-z0-9_]{0,63}$"}}},"additionalProperties":false,"$defs":{"uuid":{"description":"UUIDv4（小文字・ハイフン付き）","type":"string","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"utcDateTime":{"description":"RFC 3339、UTC（Z 固定）、秒精度","type":"string","pattern":"^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$"}}};
+const schema64 = {"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"urn:tsheet:meta:record:0.1","title":"tsheet形式データレコード v0.1","description":"data.jsonl の1行。values の中身はワークブックの schema.json に従って検証する（仕様書 §12 の D 系診断）。キー formulas は将来のレコード単位の数式用に予約しており（仕様書 §11・§15）、v0.1 では additionalProperties: false により拒否される（D01）。","type":"object","required":["id","type","parent","order","values"],"properties":{"id":{"$ref":"#/$defs/uuid"},"type":{"type":"string","pattern":"^[A-Z][A-Za-z0-9_]{0,63}$"},"parent":{"oneOf":[{"$ref":"#/$defs/uuid"},{"type":"null"}]},"order":{"type":"string","pattern":"^[0-9A-Za-z]+$"},"created":{"$ref":"#/$defs/utcDateTime"},"updated":{"$ref":"#/$defs/utcDateTime"},"createdBy":{"type":"string","minLength":1,"maxLength":254},"updatedBy":{"type":"string","minLength":1,"maxLength":254},"values":{"type":"object","propertyNames":{"pattern":"^[a-z][A-Za-z0-9_]{0,63}$"}}},"additionalProperties":false,"$defs":{"uuid":{"description":"UUIDv4（小文字・ハイフン付き）","type":"string","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"utcDateTime":{"description":"RFC 3339、UTC（Z 固定）、秒精度","type":"string","pattern":"^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$"}}};
 const schema65 = {"description":"UUIDv4（小文字・ハイフン付き）","type":"string","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"};
 const schema67 = {"description":"RFC 3339、UTC（Z 固定）、秒精度","type":"string","pattern":"^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$"};
 const pattern23 = new RegExp("^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$", "u");
@@ -4128,18 +4128,20 @@ return errors === 0;
 validate38.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
 export const view = validate39;
-const schema69 = {"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"urn:tsheet:meta:view:0.1","title":"tsheet形式 View定義 v0.1","description":"views/<name>.view.json の構造検証用。フィールド参照や式の検証は View仕様 §9 の V 系診断で行う。","type":"object","required":["specVersion","name","mode","columns"],"properties":{"$schema":{"type":"string"},"specVersion":{"const":"0.1"},"name":{"$ref":"#/$defs/identifier"},"title":{"type":"string"},"description":{"type":"string"},"mode":{"enum":["treeGrid","treePanel","crosstab"]},"tree":{"type":"object","properties":{"types":{"type":"array","minItems":1,"uniqueItems":true,"items":{"$ref":"#/$defs/typeName"}},"expandDepth":{"oneOf":[{"type":"integer","minimum":0},{"const":"all"}]},"showTypeBadge":{"type":"boolean","default":true},"showOutline":{"type":"boolean","default":false}},"additionalProperties":false},"rows":{"type":"object","properties":{"height":{"oneOf":[{"const":"auto"},{"type":"number","minimum":16,"maximum":400}]},"grayOutUnavailable":{"type":"boolean","default":true}},"additionalProperties":false},"columns":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/column"}},"sort":{"type":"array","items":{"type":"object","required":["field"],"properties":{"field":{"$ref":"#/$defs/sortRef"},"dir":{"enum":["asc","desc"],"default":"asc"},"collation":{"enum":["codepoint","locale"],"default":"codepoint"}},"additionalProperties":false}},"filter":{"type":"object","properties":{"types":{"type":"array","minItems":1,"uniqueItems":true,"items":{"$ref":"#/$defs/typeName"}},"expr":{"$ref":"#/$defs/expression"},"ancestors":{"enum":["dim","show"],"default":"dim"}},"additionalProperties":false},"rules":{"type":"array","items":{"$ref":"#/$defs/rule"}},"panel":{"type":"object","properties":{"width":{"type":"number","minimum":240},"types":{"type":"object","propertyNames":{"$ref":"#/$defs/typeName"},"additionalProperties":{"type":"object","properties":{"columns":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/column"}},"collapsed":{"type":"boolean"}},"additionalProperties":false}}},"additionalProperties":false},"crosstab":{"type":"object","required":["sourceType","key","value","fn"],"properties":{"sourceType":{"$ref":"#/$defs/typeName"},"key":{"$ref":"#/$defs/fieldId"},"keys":{"oneOf":[{"const":"fromData"},{"type":"array","minItems":1,"uniqueItems":true,"items":{"type":"string"}},{"type":"object","required":["from","to","step"],"properties":{"from":{"type":"string"},"to":{"type":"string"},"step":{"enum":["day","month","quarter","year"]}},"additionalProperties":false}]},"keyLabel":{"type":"string","description":"列見出しの表示パターン（date/期間キー用）。例: YYYY/MM, M月"},"value":{"$ref":"#/$defs/fieldId"},"fn":{"enum":["sum","count","min","max","avg"]},"columnWidth":{"type":"number","minimum":24,"maximum":2000},"format":{"$ref":"#/$defs/format"},"rowTotal":{"type":"boolean","default":false},"columnTotal":{"type":"boolean","default":false},"editable":{"type":"boolean","default":true}},"additionalProperties":false}},"additionalProperties":false,"$defs":{"identifier":{"type":"string","pattern":"^[a-z][A-Za-z0-9_-]{0,63}$"},"typeName":{"type":"string","pattern":"^[A-Z][A-Za-z0-9_]{0,63}$"},"fieldId":{"type":"string","pattern":"^[a-z][A-Za-z0-9_]{0,63}$"},"fieldRef":{"description":"fieldId、または Type.fieldId（型で限定）","type":"string","pattern":"^([A-Z][A-Za-z0-9_]{0,63}\\.)?[a-z][A-Za-z0-9_]{0,63}$"},"systemColumn":{"description":"システム項目の特殊列 $created / $updated / $createdBy / $updatedBy（本体仕様 §11.2）","enum":["$created","$updated","$createdBy","$updatedBy"]},"columnRef":{"description":"fieldRef、特殊列 $title / $type / $outline / $id、またはシステム項目の特殊列","oneOf":[{"$ref":"#/$defs/fieldRef"},{"enum":["$title","$type","$outline","$id"]},{"$ref":"#/$defs/systemColumn"}]},"sortRef":{"description":"fieldRef、またはシステム項目の特殊列","oneOf":[{"$ref":"#/$defs/fieldRef"},{"$ref":"#/$defs/systemColumn"}]},"expression":{"type":"string","minLength":1},"column":{"type":"object","required":["field"],"properties":{"field":{"$ref":"#/$defs/columnRef"},"label":{"type":"string"},"width":{"type":"number","minimum":24,"maximum":2000},"hidden":{"type":"boolean","default":false},"pinned":{"type":"boolean","default":false},"align":{"enum":["start","center","end"]},"wrap":{"type":"boolean","default":false},"readOnly":{"type":"boolean","default":false},"format":{"$ref":"#/$defs/format"},"labelExpr":{"$ref":"#/$defs/expression","description":"見出しを式で計算する（root 参照・TODAY・FORMAT のみ利用可）。label より優先"}},"additionalProperties":false},"format":{"type":"object","properties":{"decimals":{"type":"integer","minimum":0,"maximum":18},"thousands":{"type":"boolean"},"unit":{"enum":["none","suffix","prefix"]},"percent":{"type":"boolean"},"date":{"type":"string","description":"例: YYYY-MM-DD, YYYY/MM/DD, M/D, YYYY年M月D日"},"datetime":{"type":"string"},"boolean":{"enum":["checkbox","yesNo","onOff"]},"enum":{"enum":["label","value","both"]},"ref":{"enum":["title","path"]},"doc":{"enum":["preview","link"]}},"additionalProperties":false},"style":{"type":"object","minProperties":1,"properties":{"bg":{"$ref":"#/$defs/color"},"fg":{"$ref":"#/$defs/color"},"bold":{"type":"boolean"},"italic":{"type":"boolean"},"strike":{"type":"boolean"},"underline":{"type":"boolean"}},"additionalProperties":false},"color":{"description":"パレット名（テーマに追従）または #RRGGBB","oneOf":[{"enum":["gray","red","orange","yellow","green","teal","blue","purple","pink"]},{"type":"string","pattern":"^#[0-9A-Fa-f]{6}$"}]},"rule":{"type":"object","required":["id","when","style"],"properties":{"id":{"$ref":"#/$defs/identifier"},"description":{"type":"string"},"types":{"type":"array","minItems":1,"uniqueItems":true,"items":{"$ref":"#/$defs/typeName"}},"when":{"$ref":"#/$defs/expression"},"target":{"enum":["row","cell"],"default":"row"},"fields":{"type":"array","minItems":1,"uniqueItems":true,"items":{"$ref":"#/$defs/fieldRef"}},"style":{"$ref":"#/$defs/style"},"stop":{"type":"boolean","default":false}},"additionalProperties":false,"if":{"properties":{"target":{"const":"cell"}},"required":["target"]},"then":{"required":["fields"]}}},"allOf":[{"if":{"properties":{"mode":{"const":"crosstab"}}},"then":{"required":["crosstab"]}},{"if":{"properties":{"mode":{"enum":["treeGrid","treePanel"]}}},"then":{"not":{"required":["crosstab"]}}}]};
+const schema69 = {"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"urn:tsheet:meta:view:0.1","title":"tsheet形式 View定義 v0.1","description":"views/<name>.view.json の構造検証用。フィールド参照や式の検証は View仕様 §9 の V 系診断で行う。","type":"object","required":["specVersion","name","mode","columns"],"properties":{"$schema":{"type":"string"},"specVersion":{"const":"0.1"},"name":{"$ref":"#/$defs/identifier"},"title":{"type":"string"},"description":{"type":"string"},"mode":{"enum":["treeGrid","treePanel","crosstab"]},"tree":{"type":"object","properties":{"types":{"type":"array","minItems":1,"uniqueItems":true,"items":{"$ref":"#/$defs/typeName"}},"expandDepth":{"oneOf":[{"type":"integer","minimum":0},{"const":"all"}]},"showTypeBadge":{"type":"boolean","default":true},"showOutline":{"type":"boolean","default":false}},"additionalProperties":false},"rows":{"type":"object","properties":{"height":{"oneOf":[{"const":"auto"},{"type":"number","minimum":16,"maximum":400}]},"grayOutUnavailable":{"type":"boolean","default":true}},"additionalProperties":false},"columns":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/column"}},"sort":{"type":"array","items":{"type":"object","required":["field"],"properties":{"field":{"$ref":"#/$defs/sortRef"},"dir":{"enum":["asc","desc"],"default":"asc"},"collation":{"enum":["codepoint","locale"],"default":"codepoint"}},"additionalProperties":false}},"filter":{"type":"object","properties":{"types":{"type":"array","minItems":1,"uniqueItems":true,"items":{"$ref":"#/$defs/typeName"}},"expr":{"$ref":"#/$defs/expression"},"ancestors":{"enum":["dim","show"],"default":"dim"}},"additionalProperties":false},"rules":{"type":"array","items":{"$ref":"#/$defs/rule"}},"panel":{"type":"object","properties":{"width":{"type":"number","minimum":240},"types":{"type":"object","propertyNames":{"$ref":"#/$defs/typeName"},"additionalProperties":{"type":"object","properties":{"columns":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/column"}},"collapsed":{"type":"boolean"}},"additionalProperties":false}}},"additionalProperties":false},"crosstab":{"type":"object","required":["sourceType","key","value","fn"],"properties":{"sourceType":{"$ref":"#/$defs/typeName"},"key":{"$ref":"#/$defs/fieldId"},"keys":{"oneOf":[{"const":"fromData"},{"type":"array","minItems":1,"uniqueItems":true,"items":{"type":"string"}},{"type":"object","required":["from","to","step"],"properties":{"from":{"type":"string"},"to":{"type":"string"},"step":{"enum":["day","month","quarter","year"]}},"additionalProperties":false}]},"keyLabel":{"type":"string","description":"列見出しの表示パターン（date/期間キー用）。例: YYYY/MM, M月"},"value":{"$ref":"#/$defs/fieldId"},"fn":{"enum":["sum","count","min","max","avg"]},"columnWidth":{"type":"number","minimum":24,"maximum":2000},"format":{"$ref":"#/$defs/format"},"rowTotal":{"type":"boolean","default":false},"columnTotal":{"type":"boolean","default":false},"editable":{"type":"boolean","default":true}},"additionalProperties":false}},"additionalProperties":false,"$defs":{"identifier":{"type":"string","pattern":"^[a-z][A-Za-z0-9_-]{0,63}$"},"typeName":{"type":"string","pattern":"^[A-Z][A-Za-z0-9_]{0,63}$"},"fieldId":{"type":"string","pattern":"^[a-z][A-Za-z0-9_]{0,63}$"},"fieldRef":{"description":"fieldId、または Type.fieldId（型で限定）","type":"string","pattern":"^([A-Z][A-Za-z0-9_]{0,63}\\.)?[a-z][A-Za-z0-9_]{0,63}$"},"systemColumn":{"description":"システム項目の特殊列 $created / $updated / $createdBy / $updatedBy（本体仕様 §11.2）","enum":["$created","$updated","$createdBy","$updatedBy"]},"exprColumnRef":{"description":"計算列 $expr:<id>（View仕様 §6.4）。<id> は列の識別子","type":"string","pattern":"^\\$expr:[a-z][A-Za-z0-9_]{0,63}$"},"columnRef":{"description":"fieldRef、特殊列 $title / $type / $outline / $id、システム項目の特殊列、または計算列 $expr:<id>","oneOf":[{"$ref":"#/$defs/fieldRef"},{"enum":["$title","$type","$outline","$id"]},{"$ref":"#/$defs/systemColumn"},{"$ref":"#/$defs/exprColumnRef"}]},"sortRef":{"description":"fieldRef、システム項目の特殊列、または同じ View の計算列 $expr:<id>","oneOf":[{"$ref":"#/$defs/fieldRef"},{"$ref":"#/$defs/systemColumn"},{"$ref":"#/$defs/exprColumnRef"}]},"expression":{"type":"string","minLength":1},"column":{"type":"object","required":["field"],"properties":{"field":{"$ref":"#/$defs/columnRef"},"expr":{"$ref":"#/$defs/expression","description":"計算列（field が $expr:<id>）の式。各行のノードを文脈として評価する。計算列では必須、それ以外の列には指定できない"},"label":{"type":"string"},"width":{"type":"number","minimum":24,"maximum":2000},"hidden":{"type":"boolean","default":false},"pinned":{"type":"boolean","default":false},"align":{"enum":["start","center","end"]},"wrap":{"type":"boolean","default":false},"readOnly":{"type":"boolean","default":false},"format":{"$ref":"#/$defs/format"},"labelExpr":{"$ref":"#/$defs/expression","description":"見出しを式で計算する（root 参照・TODAY・FORMAT のみ利用可）。label より優先"}},"additionalProperties":false,"if":{"properties":{"field":{"$ref":"#/$defs/exprColumnRef"}}},"then":{"required":["expr"]},"else":{"not":{"required":["expr"]}}},"format":{"type":"object","properties":{"decimals":{"type":"integer","minimum":0,"maximum":18},"thousands":{"type":"boolean"},"unit":{"enum":["none","suffix","prefix"]},"percent":{"type":"boolean"},"date":{"type":"string","description":"例: YYYY-MM-DD, YYYY/MM/DD, M/D, YYYY年M月D日"},"datetime":{"type":"string"},"boolean":{"enum":["checkbox","yesNo","onOff"]},"enum":{"enum":["label","value","both"]},"ref":{"enum":["title","path"]},"doc":{"enum":["preview","link"]}},"additionalProperties":false},"style":{"type":"object","minProperties":1,"properties":{"bg":{"$ref":"#/$defs/color"},"fg":{"$ref":"#/$defs/color"},"bold":{"type":"boolean"},"italic":{"type":"boolean"},"strike":{"type":"boolean"},"underline":{"type":"boolean"}},"additionalProperties":false},"color":{"description":"パレット名（テーマに追従）または #RRGGBB","oneOf":[{"enum":["gray","red","orange","yellow","green","teal","blue","purple","pink"]},{"type":"string","pattern":"^#[0-9A-Fa-f]{6}$"}]},"rule":{"type":"object","required":["id","when","style"],"properties":{"id":{"$ref":"#/$defs/identifier"},"description":{"type":"string"},"types":{"type":"array","minItems":1,"uniqueItems":true,"items":{"$ref":"#/$defs/typeName"}},"when":{"$ref":"#/$defs/expression"},"target":{"enum":["row","cell"],"default":"row"},"fields":{"type":"array","minItems":1,"uniqueItems":true,"items":{"oneOf":[{"$ref":"#/$defs/fieldRef"},{"$ref":"#/$defs/exprColumnRef"}]}},"style":{"$ref":"#/$defs/style"},"stop":{"type":"boolean","default":false}},"additionalProperties":false,"if":{"properties":{"target":{"const":"cell"}},"required":["target"]},"then":{"required":["fields"]}}},"allOf":[{"if":{"properties":{"mode":{"const":"crosstab"}}},"then":{"required":["crosstab"]}},{"if":{"properties":{"mode":{"enum":["treeGrid","treePanel"]}}},"then":{"not":{"required":["crosstab"]}}}]};
 const schema70 = {"type":"string","pattern":"^[a-z][A-Za-z0-9_-]{0,63}$"};
 const schema71 = {"type":"string","pattern":"^[A-Z][A-Za-z0-9_]{0,63}$"};
-const schema77 = {"type":"string","minLength":1};
-const schema93 = {"type":"string","pattern":"^[a-z][A-Za-z0-9_]{0,63}$"};
-const schema76 = {"type":"object","properties":{"decimals":{"type":"integer","minimum":0,"maximum":18},"thousands":{"type":"boolean"},"unit":{"enum":["none","suffix","prefix"]},"percent":{"type":"boolean"},"date":{"type":"string","description":"例: YYYY-MM-DD, YYYY/MM/DD, M/D, YYYY年M月D日"},"datetime":{"type":"string"},"boolean":{"enum":["checkbox","yesNo","onOff"]},"enum":{"enum":["label","value","both"]},"ref":{"enum":["title","path"]},"doc":{"enum":["preview","link"]}},"additionalProperties":false};
+const schema78 = {"type":"string","minLength":1};
+const schema98 = {"type":"string","pattern":"^[a-z][A-Za-z0-9_]{0,63}$"};
+const schema79 = {"type":"object","properties":{"decimals":{"type":"integer","minimum":0,"maximum":18},"thousands":{"type":"boolean"},"unit":{"enum":["none","suffix","prefix"]},"percent":{"type":"boolean"},"date":{"type":"string","description":"例: YYYY-MM-DD, YYYY/MM/DD, M/D, YYYY年M月D日"},"datetime":{"type":"string"},"boolean":{"enum":["checkbox","yesNo","onOff"]},"enum":{"enum":["label","value","both"]},"ref":{"enum":["title","path"]},"doc":{"enum":["preview","link"]}},"additionalProperties":false};
 const pattern30 = new RegExp("^[a-z][A-Za-z0-9_-]{0,63}$", "u");
-const schema72 = {"type":"object","required":["field"],"properties":{"field":{"$ref":"#/$defs/columnRef"},"label":{"type":"string"},"width":{"type":"number","minimum":24,"maximum":2000},"hidden":{"type":"boolean","default":false},"pinned":{"type":"boolean","default":false},"align":{"enum":["start","center","end"]},"wrap":{"type":"boolean","default":false},"readOnly":{"type":"boolean","default":false},"format":{"$ref":"#/$defs/format"},"labelExpr":{"$ref":"#/$defs/expression","description":"見出しを式で計算する（root 参照・TODAY・FORMAT のみ利用可）。label より優先"}},"additionalProperties":false};
-const schema73 = {"description":"fieldRef、特殊列 $title / $type / $outline / $id、またはシステム項目の特殊列","oneOf":[{"$ref":"#/$defs/fieldRef"},{"enum":["$title","$type","$outline","$id"]},{"$ref":"#/$defs/systemColumn"}]};
-const schema74 = {"description":"fieldId、または Type.fieldId（型で限定）","type":"string","pattern":"^([A-Z][A-Za-z0-9_]{0,63}\\.)?[a-z][A-Za-z0-9_]{0,63}$"};
-const schema75 = {"description":"システム項目の特殊列 $created / $updated / $createdBy / $updatedBy（本体仕様 §11.2）","enum":["$created","$updated","$createdBy","$updatedBy"]};
-const pattern32 = new RegExp("^([A-Z][A-Za-z0-9_]{0,63}\\.)?[a-z][A-Za-z0-9_]{0,63}$", "u");
+const schema72 = {"type":"object","required":["field"],"properties":{"field":{"$ref":"#/$defs/columnRef"},"expr":{"$ref":"#/$defs/expression","description":"計算列（field が $expr:<id>）の式。各行のノードを文脈として評価する。計算列では必須、それ以外の列には指定できない"},"label":{"type":"string"},"width":{"type":"number","minimum":24,"maximum":2000},"hidden":{"type":"boolean","default":false},"pinned":{"type":"boolean","default":false},"align":{"enum":["start","center","end"]},"wrap":{"type":"boolean","default":false},"readOnly":{"type":"boolean","default":false},"format":{"$ref":"#/$defs/format"},"labelExpr":{"$ref":"#/$defs/expression","description":"見出しを式で計算する（root 参照・TODAY・FORMAT のみ利用可）。label より優先"}},"additionalProperties":false,"if":{"properties":{"field":{"$ref":"#/$defs/exprColumnRef"}}},"then":{"required":["expr"]},"else":{"not":{"required":["expr"]}}};
+const schema73 = {"description":"計算列 $expr:<id>（View仕様 §6.4）。<id> は列の識別子","type":"string","pattern":"^\\$expr:[a-z][A-Za-z0-9_]{0,63}$"};
+const pattern32 = new RegExp("^\\$expr:[a-z][A-Za-z0-9_]{0,63}$", "u");
+const schema74 = {"description":"fieldRef、特殊列 $title / $type / $outline / $id、システム項目の特殊列、または計算列 $expr:<id>","oneOf":[{"$ref":"#/$defs/fieldRef"},{"enum":["$title","$type","$outline","$id"]},{"$ref":"#/$defs/systemColumn"},{"$ref":"#/$defs/exprColumnRef"}]};
+const schema75 = {"description":"fieldId、または Type.fieldId（型で限定）","type":"string","pattern":"^([A-Z][A-Za-z0-9_]{0,63}\\.)?[a-z][A-Za-z0-9_]{0,63}$"};
+const schema76 = {"description":"システム項目の特殊列 $created / $updated / $createdBy / $updatedBy（本体仕様 §11.2）","enum":["$created","$updated","$createdBy","$updatedBy"]};
+const pattern33 = new RegExp("^([A-Z][A-Za-z0-9_]{0,63}\\.)?[a-z][A-Za-z0-9_]{0,63}$", "u");
 
 function validate41(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -4156,7 +4158,7 @@ let valid0 = false;
 let passing0 = null;
 const _errs1 = errors;
 if(typeof data === "string"){
-if(!pattern32.test(data)){
+if(!pattern33.test(data)){
 const err0 = {instancePath,schemaPath:"#/$defs/fieldRef/pattern",keyword:"pattern",params:{pattern: "^([A-Z][A-Za-z0-9_]{0,63}\\.)?[a-z][A-Za-z0-9_]{0,63}$"},message:"must match pattern \""+"^([A-Z][A-Za-z0-9_]{0,63}\\.)?[a-z][A-Za-z0-9_]{0,63}$"+"\""};
 if(vErrors === null){
 vErrors = [err0];
@@ -4184,7 +4186,7 @@ passing0 = 0;
 }
 const _errs4 = errors;
 if(!((((data === "$title") || (data === "$type")) || (data === "$outline")) || (data === "$id"))){
-const err2 = {instancePath,schemaPath:"#/oneOf/1/enum",keyword:"enum",params:{allowedValues: schema73.oneOf[1].enum},message:"must be equal to one of the allowed values"};
+const err2 = {instancePath,schemaPath:"#/oneOf/1/enum",keyword:"enum",params:{allowedValues: schema74.oneOf[1].enum},message:"must be equal to one of the allowed values"};
 if(vErrors === null){
 vErrors = [err2];
 }
@@ -4205,7 +4207,7 @@ passing0 = 1;
 }
 const _errs5 = errors;
 if(!((((data === "$created") || (data === "$updated")) || (data === "$createdBy")) || (data === "$updatedBy"))){
-const err3 = {instancePath,schemaPath:"#/$defs/systemColumn/enum",keyword:"enum",params:{allowedValues: schema75.enum},message:"must be equal to one of the allowed values"};
+const err3 = {instancePath,schemaPath:"#/$defs/systemColumn/enum",keyword:"enum",params:{allowedValues: schema76.enum},message:"must be equal to one of the allowed values"};
 if(vErrors === null){
 vErrors = [err3];
 }
@@ -4224,15 +4226,49 @@ if(_valid0){
 valid0 = true;
 passing0 = 2;
 }
-}
-}
-if(!valid0){
-const err4 = {instancePath,schemaPath:"#/oneOf",keyword:"oneOf",params:{passingSchemas: passing0},message:"must match exactly one schema in oneOf"};
+const _errs7 = errors;
+if(typeof data === "string"){
+if(!pattern32.test(data)){
+const err4 = {instancePath,schemaPath:"#/$defs/exprColumnRef/pattern",keyword:"pattern",params:{pattern: "^\\$expr:[a-z][A-Za-z0-9_]{0,63}$"},message:"must match pattern \""+"^\\$expr:[a-z][A-Za-z0-9_]{0,63}$"+"\""};
 if(vErrors === null){
 vErrors = [err4];
 }
 else {
 vErrors.push(err4);
+}
+errors++;
+}
+}
+else {
+const err5 = {instancePath,schemaPath:"#/$defs/exprColumnRef/type",keyword:"type",params:{type: "string"},message:"must be string"};
+if(vErrors === null){
+vErrors = [err5];
+}
+else {
+vErrors.push(err5);
+}
+errors++;
+}
+var _valid0 = _errs7 === errors;
+if(_valid0 && valid0){
+valid0 = false;
+passing0 = [passing0, 3];
+}
+else {
+if(_valid0){
+valid0 = true;
+passing0 = 3;
+}
+}
+}
+}
+if(!valid0){
+const err6 = {instancePath,schemaPath:"#/oneOf",keyword:"oneOf",params:{passingSchemas: passing0},message:"must match exactly one schema in oneOf"};
+if(vErrors === null){
+vErrors = [err6];
+}
+else {
+vErrors.push(err6);
 }
 errors++;
 }
@@ -4263,9 +4299,17 @@ evaluated0.props = undefined;
 if(evaluated0.dynamicItems){
 evaluated0.items = undefined;
 }
+const _errs1 = errors;
+let valid0 = true;
+const _errs2 = errors;
 if(data && typeof data == "object" && !Array.isArray(data)){
-if(data.field === undefined){
-const err0 = {instancePath,schemaPath:"#/required",keyword:"required",params:{missingProperty: "field"},message:"must have required property '"+"field"+"'"};
+if(data.field !== undefined){
+let data0 = data.field;
+const _errs4 = errors;
+if(errors === _errs4){
+if(typeof data0 === "string"){
+if(!pattern32.test(data0)){
+const err0 = {};
 if(vErrors === null){
 vErrors = [err0];
 }
@@ -4274,14 +4318,121 @@ vErrors.push(err0);
 }
 errors++;
 }
-for(const key0 in data){
-if(!(func1.call(schema72.properties, key0))){
-const err1 = {instancePath,schemaPath:"#/additionalProperties",keyword:"additionalProperties",params:{additionalProperty: key0},message:"must NOT have additional properties"};
+}
+else {
+const err1 = {};
 if(vErrors === null){
 vErrors = [err1];
 }
 else {
 vErrors.push(err1);
+}
+errors++;
+}
+}
+}
+}
+var _valid0 = _errs2 === errors;
+errors = _errs1;
+if(vErrors !== null){
+if(_errs1){
+vErrors.length = _errs1;
+}
+else {
+vErrors = null;
+}
+}
+let ifClause0;
+if(_valid0){
+const _errs6 = errors;
+if(data && typeof data == "object" && !Array.isArray(data)){
+if(data.expr === undefined){
+const err2 = {instancePath,schemaPath:"#/then/required",keyword:"required",params:{missingProperty: "expr"},message:"must have required property '"+"expr"+"'"};
+if(vErrors === null){
+vErrors = [err2];
+}
+else {
+vErrors.push(err2);
+}
+errors++;
+}
+}
+var _valid0 = _errs6 === errors;
+valid0 = _valid0;
+ifClause0 = "then";
+}
+else {
+const _errs7 = errors;
+const _errs8 = errors;
+const _errs9 = errors;
+if(data && typeof data == "object" && !Array.isArray(data)){
+let missing0;
+if((data.expr === undefined) && (missing0 = "expr")){
+const err3 = {};
+if(vErrors === null){
+vErrors = [err3];
+}
+else {
+vErrors.push(err3);
+}
+errors++;
+}
+}
+var valid3 = _errs9 === errors;
+if(valid3){
+const err4 = {instancePath,schemaPath:"#/else/not",keyword:"not",params:{},message:"must NOT be valid"};
+if(vErrors === null){
+vErrors = [err4];
+}
+else {
+vErrors.push(err4);
+}
+errors++;
+}
+else {
+errors = _errs8;
+if(vErrors !== null){
+if(_errs8){
+vErrors.length = _errs8;
+}
+else {
+vErrors = null;
+}
+}
+}
+var _valid0 = _errs7 === errors;
+valid0 = _valid0;
+ifClause0 = "else";
+}
+if(!valid0){
+const err5 = {instancePath,schemaPath:"#/if",keyword:"if",params:{failingKeyword: ifClause0},message:"must match \""+ifClause0+"\" schema"};
+if(vErrors === null){
+vErrors = [err5];
+}
+else {
+vErrors.push(err5);
+}
+errors++;
+}
+if(data && typeof data == "object" && !Array.isArray(data)){
+if(data.field === undefined){
+const err6 = {instancePath,schemaPath:"#/required",keyword:"required",params:{missingProperty: "field"},message:"must have required property '"+"field"+"'"};
+if(vErrors === null){
+vErrors = [err6];
+}
+else {
+vErrors.push(err6);
+}
+errors++;
+}
+for(const key0 in data){
+if(!(func1.call(schema72.properties, key0))){
+const err7 = {instancePath,schemaPath:"#/additionalProperties",keyword:"additionalProperties",params:{additionalProperty: key0},message:"must NOT have additional properties"};
+if(vErrors === null){
+vErrors = [err7];
+}
+else {
+vErrors.push(err7);
 }
 errors++;
 }
@@ -4292,81 +4443,11 @@ vErrors = vErrors === null ? validate41.errors : vErrors.concat(validate41.error
 errors = vErrors.length;
 }
 }
-if(data.label !== undefined){
-if(typeof data.label !== "string"){
-const err2 = {instancePath:instancePath+"/label",schemaPath:"#/properties/label/type",keyword:"type",params:{type: "string"},message:"must be string"};
-if(vErrors === null){
-vErrors = [err2];
-}
-else {
-vErrors.push(err2);
-}
-errors++;
-}
-}
-if(data.width !== undefined){
-let data2 = data.width;
-if((typeof data2 == "number") && (isFinite(data2))){
-if(data2 > 2000 || isNaN(data2)){
-const err3 = {instancePath:instancePath+"/width",schemaPath:"#/properties/width/maximum",keyword:"maximum",params:{comparison: "<=", limit: 2000},message:"must be <= 2000"};
-if(vErrors === null){
-vErrors = [err3];
-}
-else {
-vErrors.push(err3);
-}
-errors++;
-}
-if(data2 < 24 || isNaN(data2)){
-const err4 = {instancePath:instancePath+"/width",schemaPath:"#/properties/width/minimum",keyword:"minimum",params:{comparison: ">=", limit: 24},message:"must be >= 24"};
-if(vErrors === null){
-vErrors = [err4];
-}
-else {
-vErrors.push(err4);
-}
-errors++;
-}
-}
-else {
-const err5 = {instancePath:instancePath+"/width",schemaPath:"#/properties/width/type",keyword:"type",params:{type: "number"},message:"must be number"};
-if(vErrors === null){
-vErrors = [err5];
-}
-else {
-vErrors.push(err5);
-}
-errors++;
-}
-}
-if(data.hidden !== undefined){
-if(typeof data.hidden !== "boolean"){
-const err6 = {instancePath:instancePath+"/hidden",schemaPath:"#/properties/hidden/type",keyword:"type",params:{type: "boolean"},message:"must be boolean"};
-if(vErrors === null){
-vErrors = [err6];
-}
-else {
-vErrors.push(err6);
-}
-errors++;
-}
-}
-if(data.pinned !== undefined){
-if(typeof data.pinned !== "boolean"){
-const err7 = {instancePath:instancePath+"/pinned",schemaPath:"#/properties/pinned/type",keyword:"type",params:{type: "boolean"},message:"must be boolean"};
-if(vErrors === null){
-vErrors = [err7];
-}
-else {
-vErrors.push(err7);
-}
-errors++;
-}
-}
-if(data.align !== undefined){
-let data5 = data.align;
-if(!(((data5 === "start") || (data5 === "center")) || (data5 === "end"))){
-const err8 = {instancePath:instancePath+"/align",schemaPath:"#/properties/align/enum",keyword:"enum",params:{allowedValues: schema72.properties.align.enum},message:"must be equal to one of the allowed values"};
+if(data.expr !== undefined){
+let data2 = data.expr;
+if(typeof data2 === "string"){
+if(func3(data2) < 1){
+const err8 = {instancePath:instancePath+"/expr",schemaPath:"#/$defs/expression/minLength",keyword:"minLength",params:{limit: 1},message:"must NOT have fewer than 1 characters"};
 if(vErrors === null){
 vErrors = [err8];
 }
@@ -4376,9 +4457,8 @@ vErrors.push(err8);
 errors++;
 }
 }
-if(data.wrap !== undefined){
-if(typeof data.wrap !== "boolean"){
-const err9 = {instancePath:instancePath+"/wrap",schemaPath:"#/properties/wrap/type",keyword:"type",params:{type: "boolean"},message:"must be boolean"};
+else {
+const err9 = {instancePath:instancePath+"/expr",schemaPath:"#/$defs/expression/type",keyword:"type",params:{type: "string"},message:"must be string"};
 if(vErrors === null){
 vErrors = [err9];
 }
@@ -4388,9 +4468,9 @@ vErrors.push(err9);
 errors++;
 }
 }
-if(data.readOnly !== undefined){
-if(typeof data.readOnly !== "boolean"){
-const err10 = {instancePath:instancePath+"/readOnly",schemaPath:"#/properties/readOnly/type",keyword:"type",params:{type: "boolean"},message:"must be boolean"};
+if(data.label !== undefined){
+if(typeof data.label !== "string"){
+const err10 = {instancePath:instancePath+"/label",schemaPath:"#/properties/label/type",keyword:"type",params:{type: "string"},message:"must be string"};
 if(vErrors === null){
 vErrors = [err10];
 }
@@ -4400,12 +4480,11 @@ vErrors.push(err10);
 errors++;
 }
 }
-if(data.format !== undefined){
-let data8 = data.format;
-if(data8 && typeof data8 == "object" && !Array.isArray(data8)){
-for(const key1 in data8){
-if(!(func1.call(schema76.properties, key1))){
-const err11 = {instancePath:instancePath+"/format",schemaPath:"#/$defs/format/additionalProperties",keyword:"additionalProperties",params:{additionalProperty: key1},message:"must NOT have additional properties"};
+if(data.width !== undefined){
+let data4 = data.width;
+if((typeof data4 == "number") && (isFinite(data4))){
+if(data4 > 2000 || isNaN(data4)){
+const err11 = {instancePath:instancePath+"/width",schemaPath:"#/properties/width/maximum",keyword:"maximum",params:{comparison: "<=", limit: 2000},message:"must be <= 2000"};
 if(vErrors === null){
 vErrors = [err11];
 }
@@ -4414,11 +4493,8 @@ vErrors.push(err11);
 }
 errors++;
 }
-}
-if(data8.decimals !== undefined){
-let data9 = data8.decimals;
-if(!(((typeof data9 == "number") && (!(data9 % 1) && !isNaN(data9))) && (isFinite(data9)))){
-const err12 = {instancePath:instancePath+"/format/decimals",schemaPath:"#/$defs/format/properties/decimals/type",keyword:"type",params:{type: "integer"},message:"must be integer"};
+if(data4 < 24 || isNaN(data4)){
+const err12 = {instancePath:instancePath+"/width",schemaPath:"#/properties/width/minimum",keyword:"minimum",params:{comparison: ">=", limit: 24},message:"must be >= 24"};
 if(vErrors === null){
 vErrors = [err12];
 }
@@ -4427,9 +4503,9 @@ vErrors.push(err12);
 }
 errors++;
 }
-if((typeof data9 == "number") && (isFinite(data9))){
-if(data9 > 18 || isNaN(data9)){
-const err13 = {instancePath:instancePath+"/format/decimals",schemaPath:"#/$defs/format/properties/decimals/maximum",keyword:"maximum",params:{comparison: "<=", limit: 18},message:"must be <= 18"};
+}
+else {
+const err13 = {instancePath:instancePath+"/width",schemaPath:"#/properties/width/type",keyword:"type",params:{type: "number"},message:"must be number"};
 if(vErrors === null){
 vErrors = [err13];
 }
@@ -4438,8 +4514,10 @@ vErrors.push(err13);
 }
 errors++;
 }
-if(data9 < 0 || isNaN(data9)){
-const err14 = {instancePath:instancePath+"/format/decimals",schemaPath:"#/$defs/format/properties/decimals/minimum",keyword:"minimum",params:{comparison: ">=", limit: 0},message:"must be >= 0"};
+}
+if(data.hidden !== undefined){
+if(typeof data.hidden !== "boolean"){
+const err14 = {instancePath:instancePath+"/hidden",schemaPath:"#/properties/hidden/type",keyword:"type",params:{type: "boolean"},message:"must be boolean"};
 if(vErrors === null){
 vErrors = [err14];
 }
@@ -4449,10 +4527,9 @@ vErrors.push(err14);
 errors++;
 }
 }
-}
-if(data8.thousands !== undefined){
-if(typeof data8.thousands !== "boolean"){
-const err15 = {instancePath:instancePath+"/format/thousands",schemaPath:"#/$defs/format/properties/thousands/type",keyword:"type",params:{type: "boolean"},message:"must be boolean"};
+if(data.pinned !== undefined){
+if(typeof data.pinned !== "boolean"){
+const err15 = {instancePath:instancePath+"/pinned",schemaPath:"#/properties/pinned/type",keyword:"type",params:{type: "boolean"},message:"must be boolean"};
 if(vErrors === null){
 vErrors = [err15];
 }
@@ -4462,10 +4539,10 @@ vErrors.push(err15);
 errors++;
 }
 }
-if(data8.unit !== undefined){
-let data11 = data8.unit;
-if(!(((data11 === "none") || (data11 === "suffix")) || (data11 === "prefix"))){
-const err16 = {instancePath:instancePath+"/format/unit",schemaPath:"#/$defs/format/properties/unit/enum",keyword:"enum",params:{allowedValues: schema76.properties.unit.enum},message:"must be equal to one of the allowed values"};
+if(data.align !== undefined){
+let data7 = data.align;
+if(!(((data7 === "start") || (data7 === "center")) || (data7 === "end"))){
+const err16 = {instancePath:instancePath+"/align",schemaPath:"#/properties/align/enum",keyword:"enum",params:{allowedValues: schema72.properties.align.enum},message:"must be equal to one of the allowed values"};
 if(vErrors === null){
 vErrors = [err16];
 }
@@ -4475,9 +4552,9 @@ vErrors.push(err16);
 errors++;
 }
 }
-if(data8.percent !== undefined){
-if(typeof data8.percent !== "boolean"){
-const err17 = {instancePath:instancePath+"/format/percent",schemaPath:"#/$defs/format/properties/percent/type",keyword:"type",params:{type: "boolean"},message:"must be boolean"};
+if(data.wrap !== undefined){
+if(typeof data.wrap !== "boolean"){
+const err17 = {instancePath:instancePath+"/wrap",schemaPath:"#/properties/wrap/type",keyword:"type",params:{type: "boolean"},message:"must be boolean"};
 if(vErrors === null){
 vErrors = [err17];
 }
@@ -4487,9 +4564,9 @@ vErrors.push(err17);
 errors++;
 }
 }
-if(data8.date !== undefined){
-if(typeof data8.date !== "string"){
-const err18 = {instancePath:instancePath+"/format/date",schemaPath:"#/$defs/format/properties/date/type",keyword:"type",params:{type: "string"},message:"must be string"};
+if(data.readOnly !== undefined){
+if(typeof data.readOnly !== "boolean"){
+const err18 = {instancePath:instancePath+"/readOnly",schemaPath:"#/properties/readOnly/type",keyword:"type",params:{type: "boolean"},message:"must be boolean"};
 if(vErrors === null){
 vErrors = [err18];
 }
@@ -4499,9 +4576,12 @@ vErrors.push(err18);
 errors++;
 }
 }
-if(data8.datetime !== undefined){
-if(typeof data8.datetime !== "string"){
-const err19 = {instancePath:instancePath+"/format/datetime",schemaPath:"#/$defs/format/properties/datetime/type",keyword:"type",params:{type: "string"},message:"must be string"};
+if(data.format !== undefined){
+let data10 = data.format;
+if(data10 && typeof data10 == "object" && !Array.isArray(data10)){
+for(const key1 in data10){
+if(!(func1.call(schema79.properties, key1))){
+const err19 = {instancePath:instancePath+"/format",schemaPath:"#/$defs/format/additionalProperties",keyword:"additionalProperties",params:{additionalProperty: key1},message:"must NOT have additional properties"};
 if(vErrors === null){
 vErrors = [err19];
 }
@@ -4511,10 +4591,10 @@ vErrors.push(err19);
 errors++;
 }
 }
-if(data8.boolean !== undefined){
-let data15 = data8.boolean;
-if(!(((data15 === "checkbox") || (data15 === "yesNo")) || (data15 === "onOff"))){
-const err20 = {instancePath:instancePath+"/format/boolean",schemaPath:"#/$defs/format/properties/boolean/enum",keyword:"enum",params:{allowedValues: schema76.properties.boolean.enum},message:"must be equal to one of the allowed values"};
+if(data10.decimals !== undefined){
+let data11 = data10.decimals;
+if(!(((typeof data11 == "number") && (!(data11 % 1) && !isNaN(data11))) && (isFinite(data11)))){
+const err20 = {instancePath:instancePath+"/format/decimals",schemaPath:"#/$defs/format/properties/decimals/type",keyword:"type",params:{type: "integer"},message:"must be integer"};
 if(vErrors === null){
 vErrors = [err20];
 }
@@ -4523,11 +4603,9 @@ vErrors.push(err20);
 }
 errors++;
 }
-}
-if(data8.enum !== undefined){
-let data16 = data8.enum;
-if(!(((data16 === "label") || (data16 === "value")) || (data16 === "both"))){
-const err21 = {instancePath:instancePath+"/format/enum",schemaPath:"#/$defs/format/properties/enum/enum",keyword:"enum",params:{allowedValues: schema76.properties.enum.enum},message:"must be equal to one of the allowed values"};
+if((typeof data11 == "number") && (isFinite(data11))){
+if(data11 > 18 || isNaN(data11)){
+const err21 = {instancePath:instancePath+"/format/decimals",schemaPath:"#/$defs/format/properties/decimals/maximum",keyword:"maximum",params:{comparison: "<=", limit: 18},message:"must be <= 18"};
 if(vErrors === null){
 vErrors = [err21];
 }
@@ -4536,11 +4614,8 @@ vErrors.push(err21);
 }
 errors++;
 }
-}
-if(data8.ref !== undefined){
-let data17 = data8.ref;
-if(!((data17 === "title") || (data17 === "path"))){
-const err22 = {instancePath:instancePath+"/format/ref",schemaPath:"#/$defs/format/properties/ref/enum",keyword:"enum",params:{allowedValues: schema76.properties.ref.enum},message:"must be equal to one of the allowed values"};
+if(data11 < 0 || isNaN(data11)){
+const err22 = {instancePath:instancePath+"/format/decimals",schemaPath:"#/$defs/format/properties/decimals/minimum",keyword:"minimum",params:{comparison: ">=", limit: 0},message:"must be >= 0"};
 if(vErrors === null){
 vErrors = [err22];
 }
@@ -4550,10 +4625,10 @@ vErrors.push(err22);
 errors++;
 }
 }
-if(data8.doc !== undefined){
-let data18 = data8.doc;
-if(!((data18 === "preview") || (data18 === "link"))){
-const err23 = {instancePath:instancePath+"/format/doc",schemaPath:"#/$defs/format/properties/doc/enum",keyword:"enum",params:{allowedValues: schema76.properties.doc.enum},message:"must be equal to one of the allowed values"};
+}
+if(data10.thousands !== undefined){
+if(typeof data10.thousands !== "boolean"){
+const err23 = {instancePath:instancePath+"/format/thousands",schemaPath:"#/$defs/format/properties/thousands/type",keyword:"type",params:{type: "boolean"},message:"must be boolean"};
 if(vErrors === null){
 vErrors = [err23];
 }
@@ -4563,9 +4638,10 @@ vErrors.push(err23);
 errors++;
 }
 }
-}
-else {
-const err24 = {instancePath:instancePath+"/format",schemaPath:"#/$defs/format/type",keyword:"type",params:{type: "object"},message:"must be object"};
+if(data10.unit !== undefined){
+let data13 = data10.unit;
+if(!(((data13 === "none") || (data13 === "suffix")) || (data13 === "prefix"))){
+const err24 = {instancePath:instancePath+"/format/unit",schemaPath:"#/$defs/format/properties/unit/enum",keyword:"enum",params:{allowedValues: schema79.properties.unit.enum},message:"must be equal to one of the allowed values"};
 if(vErrors === null){
 vErrors = [err24];
 }
@@ -4575,11 +4651,9 @@ vErrors.push(err24);
 errors++;
 }
 }
-if(data.labelExpr !== undefined){
-let data19 = data.labelExpr;
-if(typeof data19 === "string"){
-if(func3(data19) < 1){
-const err25 = {instancePath:instancePath+"/labelExpr",schemaPath:"#/$defs/expression/minLength",keyword:"minLength",params:{limit: 1},message:"must NOT have fewer than 1 characters"};
+if(data10.percent !== undefined){
+if(typeof data10.percent !== "boolean"){
+const err25 = {instancePath:instancePath+"/format/percent",schemaPath:"#/$defs/format/properties/percent/type",keyword:"type",params:{type: "boolean"},message:"must be boolean"};
 if(vErrors === null){
 vErrors = [err25];
 }
@@ -4589,8 +4663,9 @@ vErrors.push(err25);
 errors++;
 }
 }
-else {
-const err26 = {instancePath:instancePath+"/labelExpr",schemaPath:"#/$defs/expression/type",keyword:"type",params:{type: "string"},message:"must be string"};
+if(data10.date !== undefined){
+if(typeof data10.date !== "string"){
+const err26 = {instancePath:instancePath+"/format/date",schemaPath:"#/$defs/format/properties/date/type",keyword:"type",params:{type: "string"},message:"must be string"};
 if(vErrors === null){
 vErrors = [err26];
 }
@@ -4600,9 +4675,9 @@ vErrors.push(err26);
 errors++;
 }
 }
-}
-else {
-const err27 = {instancePath,schemaPath:"#/type",keyword:"type",params:{type: "object"},message:"must be object"};
+if(data10.datetime !== undefined){
+if(typeof data10.datetime !== "string"){
+const err27 = {instancePath:instancePath+"/format/datetime",schemaPath:"#/$defs/format/properties/datetime/type",keyword:"type",params:{type: "string"},message:"must be string"};
 if(vErrors === null){
 vErrors = [err27];
 }
@@ -4611,12 +4686,113 @@ vErrors.push(err27);
 }
 errors++;
 }
+}
+if(data10.boolean !== undefined){
+let data17 = data10.boolean;
+if(!(((data17 === "checkbox") || (data17 === "yesNo")) || (data17 === "onOff"))){
+const err28 = {instancePath:instancePath+"/format/boolean",schemaPath:"#/$defs/format/properties/boolean/enum",keyword:"enum",params:{allowedValues: schema79.properties.boolean.enum},message:"must be equal to one of the allowed values"};
+if(vErrors === null){
+vErrors = [err28];
+}
+else {
+vErrors.push(err28);
+}
+errors++;
+}
+}
+if(data10.enum !== undefined){
+let data18 = data10.enum;
+if(!(((data18 === "label") || (data18 === "value")) || (data18 === "both"))){
+const err29 = {instancePath:instancePath+"/format/enum",schemaPath:"#/$defs/format/properties/enum/enum",keyword:"enum",params:{allowedValues: schema79.properties.enum.enum},message:"must be equal to one of the allowed values"};
+if(vErrors === null){
+vErrors = [err29];
+}
+else {
+vErrors.push(err29);
+}
+errors++;
+}
+}
+if(data10.ref !== undefined){
+let data19 = data10.ref;
+if(!((data19 === "title") || (data19 === "path"))){
+const err30 = {instancePath:instancePath+"/format/ref",schemaPath:"#/$defs/format/properties/ref/enum",keyword:"enum",params:{allowedValues: schema79.properties.ref.enum},message:"must be equal to one of the allowed values"};
+if(vErrors === null){
+vErrors = [err30];
+}
+else {
+vErrors.push(err30);
+}
+errors++;
+}
+}
+if(data10.doc !== undefined){
+let data20 = data10.doc;
+if(!((data20 === "preview") || (data20 === "link"))){
+const err31 = {instancePath:instancePath+"/format/doc",schemaPath:"#/$defs/format/properties/doc/enum",keyword:"enum",params:{allowedValues: schema79.properties.doc.enum},message:"must be equal to one of the allowed values"};
+if(vErrors === null){
+vErrors = [err31];
+}
+else {
+vErrors.push(err31);
+}
+errors++;
+}
+}
+}
+else {
+const err32 = {instancePath:instancePath+"/format",schemaPath:"#/$defs/format/type",keyword:"type",params:{type: "object"},message:"must be object"};
+if(vErrors === null){
+vErrors = [err32];
+}
+else {
+vErrors.push(err32);
+}
+errors++;
+}
+}
+if(data.labelExpr !== undefined){
+let data21 = data.labelExpr;
+if(typeof data21 === "string"){
+if(func3(data21) < 1){
+const err33 = {instancePath:instancePath+"/labelExpr",schemaPath:"#/$defs/expression/minLength",keyword:"minLength",params:{limit: 1},message:"must NOT have fewer than 1 characters"};
+if(vErrors === null){
+vErrors = [err33];
+}
+else {
+vErrors.push(err33);
+}
+errors++;
+}
+}
+else {
+const err34 = {instancePath:instancePath+"/labelExpr",schemaPath:"#/$defs/expression/type",keyword:"type",params:{type: "string"},message:"must be string"};
+if(vErrors === null){
+vErrors = [err34];
+}
+else {
+vErrors.push(err34);
+}
+errors++;
+}
+}
+}
+else {
+const err35 = {instancePath,schemaPath:"#/type",keyword:"type",params:{type: "object"},message:"must be object"};
+if(vErrors === null){
+vErrors = [err35];
+}
+else {
+vErrors.push(err35);
+}
+errors++;
+}
 validate40.errors = vErrors;
 return errors === 0;
 }
 validate40.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-const schema78 = {"description":"fieldRef、またはシステム項目の特殊列","oneOf":[{"$ref":"#/$defs/fieldRef"},{"$ref":"#/$defs/systemColumn"}]};
+const schema81 = {"description":"fieldRef、システム項目の特殊列、または同じ View の計算列 $expr:<id>","oneOf":[{"$ref":"#/$defs/fieldRef"},{"$ref":"#/$defs/systemColumn"},{"$ref":"#/$defs/exprColumnRef"}]};
 
 function validate44(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -4633,7 +4809,7 @@ let valid0 = false;
 let passing0 = null;
 const _errs1 = errors;
 if(typeof data === "string"){
-if(!pattern32.test(data)){
+if(!pattern33.test(data)){
 const err0 = {instancePath,schemaPath:"#/$defs/fieldRef/pattern",keyword:"pattern",params:{pattern: "^([A-Z][A-Za-z0-9_]{0,63}\\.)?[a-z][A-Za-z0-9_]{0,63}$"},message:"must match pattern \""+"^([A-Z][A-Za-z0-9_]{0,63}\\.)?[a-z][A-Za-z0-9_]{0,63}$"+"\""};
 if(vErrors === null){
 vErrors = [err0];
@@ -4661,7 +4837,7 @@ passing0 = 0;
 }
 const _errs4 = errors;
 if(!((((data === "$created") || (data === "$updated")) || (data === "$createdBy")) || (data === "$updatedBy"))){
-const err2 = {instancePath,schemaPath:"#/$defs/systemColumn/enum",keyword:"enum",params:{allowedValues: schema75.enum},message:"must be equal to one of the allowed values"};
+const err2 = {instancePath,schemaPath:"#/$defs/systemColumn/enum",keyword:"enum",params:{allowedValues: schema76.enum},message:"must be equal to one of the allowed values"};
 if(vErrors === null){
 vErrors = [err2];
 }
@@ -4680,14 +4856,48 @@ if(_valid0){
 valid0 = true;
 passing0 = 1;
 }
-}
-if(!valid0){
-const err3 = {instancePath,schemaPath:"#/oneOf",keyword:"oneOf",params:{passingSchemas: passing0},message:"must match exactly one schema in oneOf"};
+const _errs6 = errors;
+if(typeof data === "string"){
+if(!pattern32.test(data)){
+const err3 = {instancePath,schemaPath:"#/$defs/exprColumnRef/pattern",keyword:"pattern",params:{pattern: "^\\$expr:[a-z][A-Za-z0-9_]{0,63}$"},message:"must match pattern \""+"^\\$expr:[a-z][A-Za-z0-9_]{0,63}$"+"\""};
 if(vErrors === null){
 vErrors = [err3];
 }
 else {
 vErrors.push(err3);
+}
+errors++;
+}
+}
+else {
+const err4 = {instancePath,schemaPath:"#/$defs/exprColumnRef/type",keyword:"type",params:{type: "string"},message:"must be string"};
+if(vErrors === null){
+vErrors = [err4];
+}
+else {
+vErrors.push(err4);
+}
+errors++;
+}
+var _valid0 = _errs6 === errors;
+if(_valid0 && valid0){
+valid0 = false;
+passing0 = [passing0, 2];
+}
+else {
+if(_valid0){
+valid0 = true;
+passing0 = 2;
+}
+}
+}
+if(!valid0){
+const err5 = {instancePath,schemaPath:"#/oneOf",keyword:"oneOf",params:{passingSchemas: passing0},message:"must match exactly one schema in oneOf"};
+if(vErrors === null){
+vErrors = [err5];
+}
+else {
+vErrors.push(err5);
 }
 errors++;
 }
@@ -4707,10 +4917,10 @@ return errors === 0;
 }
 validate44.evaluated = {"dynamicProps":false,"dynamicItems":false};
 
-const schema83 = {"type":"object","required":["id","when","style"],"properties":{"id":{"$ref":"#/$defs/identifier"},"description":{"type":"string"},"types":{"type":"array","minItems":1,"uniqueItems":true,"items":{"$ref":"#/$defs/typeName"}},"when":{"$ref":"#/$defs/expression"},"target":{"enum":["row","cell"],"default":"row"},"fields":{"type":"array","minItems":1,"uniqueItems":true,"items":{"$ref":"#/$defs/fieldRef"}},"style":{"$ref":"#/$defs/style"},"stop":{"type":"boolean","default":false}},"additionalProperties":false,"if":{"properties":{"target":{"const":"cell"}},"required":["target"]},"then":{"required":["fields"]}};
-const schema88 = {"type":"object","minProperties":1,"properties":{"bg":{"$ref":"#/$defs/color"},"fg":{"$ref":"#/$defs/color"},"bold":{"type":"boolean"},"italic":{"type":"boolean"},"strike":{"type":"boolean"},"underline":{"type":"boolean"}},"additionalProperties":false};
-const schema89 = {"description":"パレット名（テーマに追従）または #RRGGBB","oneOf":[{"enum":["gray","red","orange","yellow","green","teal","blue","purple","pink"]},{"type":"string","pattern":"^#[0-9A-Fa-f]{6}$"}]};
-const pattern38 = new RegExp("^#[0-9A-Fa-f]{6}$", "u");
+const schema87 = {"type":"object","required":["id","when","style"],"properties":{"id":{"$ref":"#/$defs/identifier"},"description":{"type":"string"},"types":{"type":"array","minItems":1,"uniqueItems":true,"items":{"$ref":"#/$defs/typeName"}},"when":{"$ref":"#/$defs/expression"},"target":{"enum":["row","cell"],"default":"row"},"fields":{"type":"array","minItems":1,"uniqueItems":true,"items":{"oneOf":[{"$ref":"#/$defs/fieldRef"},{"$ref":"#/$defs/exprColumnRef"}]}},"style":{"$ref":"#/$defs/style"},"stop":{"type":"boolean","default":false}},"additionalProperties":false,"if":{"properties":{"target":{"const":"cell"}},"required":["target"]},"then":{"required":["fields"]}};
+const schema93 = {"type":"object","minProperties":1,"properties":{"bg":{"$ref":"#/$defs/color"},"fg":{"$ref":"#/$defs/color"},"bold":{"type":"boolean"},"italic":{"type":"boolean"},"strike":{"type":"boolean"},"underline":{"type":"boolean"}},"additionalProperties":false};
+const schema94 = {"description":"パレット名（テーマに追従）または #RRGGBB","oneOf":[{"enum":["gray","red","orange","yellow","green","teal","blue","purple","pink"]},{"type":"string","pattern":"^#[0-9A-Fa-f]{6}$"}]};
+const pattern42 = new RegExp("^#[0-9A-Fa-f]{6}$", "u");
 
 function validate47(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -4752,7 +4962,7 @@ let valid2 = false;
 let passing0 = null;
 const _errs5 = errors;
 if(!(((((((((data0 === "gray") || (data0 === "red")) || (data0 === "orange")) || (data0 === "yellow")) || (data0 === "green")) || (data0 === "teal")) || (data0 === "blue")) || (data0 === "purple")) || (data0 === "pink"))){
-const err2 = {instancePath:instancePath+"/bg",schemaPath:"#/$defs/color/oneOf/0/enum",keyword:"enum",params:{allowedValues: schema89.oneOf[0].enum},message:"must be equal to one of the allowed values"};
+const err2 = {instancePath:instancePath+"/bg",schemaPath:"#/$defs/color/oneOf/0/enum",keyword:"enum",params:{allowedValues: schema94.oneOf[0].enum},message:"must be equal to one of the allowed values"};
 if(vErrors === null){
 vErrors = [err2];
 }
@@ -4768,7 +4978,7 @@ passing0 = 0;
 }
 const _errs6 = errors;
 if(typeof data0 === "string"){
-if(!pattern38.test(data0)){
+if(!pattern42.test(data0)){
 const err3 = {instancePath:instancePath+"/bg",schemaPath:"#/$defs/color/oneOf/1/pattern",keyword:"pattern",params:{pattern: "^#[0-9A-Fa-f]{6}$"},message:"must match pattern \""+"^#[0-9A-Fa-f]{6}$"+"\""};
 if(vErrors === null){
 vErrors = [err3];
@@ -4829,7 +5039,7 @@ let valid4 = false;
 let passing1 = null;
 const _errs11 = errors;
 if(!(((((((((data1 === "gray") || (data1 === "red")) || (data1 === "orange")) || (data1 === "yellow")) || (data1 === "green")) || (data1 === "teal")) || (data1 === "blue")) || (data1 === "purple")) || (data1 === "pink"))){
-const err6 = {instancePath:instancePath+"/fg",schemaPath:"#/$defs/color/oneOf/0/enum",keyword:"enum",params:{allowedValues: schema89.oneOf[0].enum},message:"must be equal to one of the allowed values"};
+const err6 = {instancePath:instancePath+"/fg",schemaPath:"#/$defs/color/oneOf/0/enum",keyword:"enum",params:{allowedValues: schema94.oneOf[0].enum},message:"must be equal to one of the allowed values"};
 if(vErrors === null){
 vErrors = [err6];
 }
@@ -4845,7 +5055,7 @@ passing1 = 0;
 }
 const _errs12 = errors;
 if(typeof data1 === "string"){
-if(!pattern38.test(data1)){
+if(!pattern42.test(data1)){
 const err7 = {instancePath:instancePath+"/fg",schemaPath:"#/$defs/color/oneOf/1/pattern",keyword:"pattern",params:{pattern: "^#[0-9A-Fa-f]{6}$"},message:"must match pattern \""+"^#[0-9A-Fa-f]{6}$"+"\""};
 if(vErrors === null){
 vErrors = [err7];
@@ -5220,7 +5430,7 @@ errors++;
 if(data.target !== undefined){
 let data6 = data.target;
 if(!((data6 === "row") || (data6 === "cell"))){
-const err18 = {instancePath:instancePath+"/target",schemaPath:"#/properties/target/enum",keyword:"enum",params:{allowedValues: schema83.properties.target.enum},message:"must be equal to one of the allowed values"};
+const err18 = {instancePath:instancePath+"/target",schemaPath:"#/properties/target/enum",keyword:"enum",params:{allowedValues: schema87.properties.target.enum},message:"must be equal to one of the allowed values"};
 if(vErrors === null){
 vErrors = [err18];
 }
@@ -5246,8 +5456,12 @@ errors++;
 const len1 = data7.length;
 for(let i2=0; i2<len1; i2++){
 let data8 = data7[i2];
+const _errs23 = errors;
+let valid11 = false;
+let passing0 = null;
+const _errs24 = errors;
 if(typeof data8 === "string"){
-if(!pattern32.test(data8)){
+if(!pattern33.test(data8)){
 const err20 = {instancePath:instancePath+"/fields/" + i2,schemaPath:"#/$defs/fieldRef/pattern",keyword:"pattern",params:{pattern: "^([A-Z][A-Za-z0-9_]{0,63}\\.)?[a-z][A-Za-z0-9_]{0,63}$"},message:"must match pattern \""+"^([A-Z][A-Za-z0-9_]{0,63}\\.)?[a-z][A-Za-z0-9_]{0,63}$"+"\""};
 if(vErrors === null){
 vErrors = [err20];
@@ -5268,6 +5482,66 @@ vErrors.push(err21);
 }
 errors++;
 }
+var _valid1 = _errs24 === errors;
+if(_valid1){
+valid11 = true;
+passing0 = 0;
+}
+const _errs27 = errors;
+if(typeof data8 === "string"){
+if(!pattern32.test(data8)){
+const err22 = {instancePath:instancePath+"/fields/" + i2,schemaPath:"#/$defs/exprColumnRef/pattern",keyword:"pattern",params:{pattern: "^\\$expr:[a-z][A-Za-z0-9_]{0,63}$"},message:"must match pattern \""+"^\\$expr:[a-z][A-Za-z0-9_]{0,63}$"+"\""};
+if(vErrors === null){
+vErrors = [err22];
+}
+else {
+vErrors.push(err22);
+}
+errors++;
+}
+}
+else {
+const err23 = {instancePath:instancePath+"/fields/" + i2,schemaPath:"#/$defs/exprColumnRef/type",keyword:"type",params:{type: "string"},message:"must be string"};
+if(vErrors === null){
+vErrors = [err23];
+}
+else {
+vErrors.push(err23);
+}
+errors++;
+}
+var _valid1 = _errs27 === errors;
+if(_valid1 && valid11){
+valid11 = false;
+passing0 = [passing0, 1];
+}
+else {
+if(_valid1){
+valid11 = true;
+passing0 = 1;
+}
+}
+if(!valid11){
+const err24 = {instancePath:instancePath+"/fields/" + i2,schemaPath:"#/properties/fields/items/oneOf",keyword:"oneOf",params:{passingSchemas: passing0},message:"must match exactly one schema in oneOf"};
+if(vErrors === null){
+vErrors = [err24];
+}
+else {
+vErrors.push(err24);
+}
+errors++;
+}
+else {
+errors = _errs23;
+if(vErrors !== null){
+if(_errs23){
+vErrors.length = _errs23;
+}
+else {
+vErrors = null;
+}
+}
+}
 }
 let i3 = data7.length;
 let j1;
@@ -5276,12 +5550,12 @@ outer1:
 for(;i3--;){
 for(j1 = i3; j1--;){
 if(func0(data7[i3], data7[j1])){
-const err22 = {instancePath:instancePath+"/fields",schemaPath:"#/properties/fields/uniqueItems",keyword:"uniqueItems",params:{i: i3, j: j1},message:"must NOT have duplicate items (items ## "+j1+" and "+i3+" are identical)"};
+const err25 = {instancePath:instancePath+"/fields",schemaPath:"#/properties/fields/uniqueItems",keyword:"uniqueItems",params:{i: i3, j: j1},message:"must NOT have duplicate items (items ## "+j1+" and "+i3+" are identical)"};
 if(vErrors === null){
-vErrors = [err22];
+vErrors = [err25];
 }
 else {
-vErrors.push(err22);
+vErrors.push(err25);
 }
 errors++;
 break outer1;
@@ -5291,12 +5565,12 @@ break outer1;
 }
 }
 else {
-const err23 = {instancePath:instancePath+"/fields",schemaPath:"#/properties/fields/type",keyword:"type",params:{type: "array"},message:"must be array"};
+const err26 = {instancePath:instancePath+"/fields",schemaPath:"#/properties/fields/type",keyword:"type",params:{type: "array"},message:"must be array"};
 if(vErrors === null){
-vErrors = [err23];
+vErrors = [err26];
 }
 else {
-vErrors.push(err23);
+vErrors.push(err26);
 }
 errors++;
 }
@@ -5309,24 +5583,24 @@ errors = vErrors.length;
 }
 if(data.stop !== undefined){
 if(typeof data.stop !== "boolean"){
-const err24 = {instancePath:instancePath+"/stop",schemaPath:"#/properties/stop/type",keyword:"type",params:{type: "boolean"},message:"must be boolean"};
+const err27 = {instancePath:instancePath+"/stop",schemaPath:"#/properties/stop/type",keyword:"type",params:{type: "boolean"},message:"must be boolean"};
 if(vErrors === null){
-vErrors = [err24];
+vErrors = [err27];
 }
 else {
-vErrors.push(err24);
+vErrors.push(err27);
 }
 errors++;
 }
 }
 }
 else {
-const err25 = {instancePath,schemaPath:"#/type",keyword:"type",params:{type: "object"},message:"must be object"};
+const err28 = {instancePath,schemaPath:"#/type",keyword:"type",params:{type: "object"},message:"must be object"};
 if(vErrors === null){
-vErrors = [err25];
+vErrors = [err28];
 }
 else {
-vErrors.push(err25);
+vErrors.push(err28);
 }
 errors++;
 }
@@ -6805,7 +7079,7 @@ if(data38.format !== undefined){
 let data50 = data38.format;
 if(data50 && typeof data50 == "object" && !Array.isArray(data50)){
 for(const key11 in data50){
-if(!(func1.call(schema76.properties, key11))){
+if(!(func1.call(schema79.properties, key11))){
 const err102 = {instancePath:instancePath+"/crosstab/format",schemaPath:"#/$defs/format/additionalProperties",keyword:"additionalProperties",params:{additionalProperty: key11},message:"must NOT have additional properties"};
 if(vErrors === null){
 vErrors = [err102];
@@ -6866,7 +7140,7 @@ errors++;
 if(data50.unit !== undefined){
 let data53 = data50.unit;
 if(!(((data53 === "none") || (data53 === "suffix")) || (data53 === "prefix"))){
-const err107 = {instancePath:instancePath+"/crosstab/format/unit",schemaPath:"#/$defs/format/properties/unit/enum",keyword:"enum",params:{allowedValues: schema76.properties.unit.enum},message:"must be equal to one of the allowed values"};
+const err107 = {instancePath:instancePath+"/crosstab/format/unit",schemaPath:"#/$defs/format/properties/unit/enum",keyword:"enum",params:{allowedValues: schema79.properties.unit.enum},message:"must be equal to one of the allowed values"};
 if(vErrors === null){
 vErrors = [err107];
 }
@@ -6915,7 +7189,7 @@ errors++;
 if(data50.boolean !== undefined){
 let data57 = data50.boolean;
 if(!(((data57 === "checkbox") || (data57 === "yesNo")) || (data57 === "onOff"))){
-const err111 = {instancePath:instancePath+"/crosstab/format/boolean",schemaPath:"#/$defs/format/properties/boolean/enum",keyword:"enum",params:{allowedValues: schema76.properties.boolean.enum},message:"must be equal to one of the allowed values"};
+const err111 = {instancePath:instancePath+"/crosstab/format/boolean",schemaPath:"#/$defs/format/properties/boolean/enum",keyword:"enum",params:{allowedValues: schema79.properties.boolean.enum},message:"must be equal to one of the allowed values"};
 if(vErrors === null){
 vErrors = [err111];
 }
@@ -6928,7 +7202,7 @@ errors++;
 if(data50.enum !== undefined){
 let data58 = data50.enum;
 if(!(((data58 === "label") || (data58 === "value")) || (data58 === "both"))){
-const err112 = {instancePath:instancePath+"/crosstab/format/enum",schemaPath:"#/$defs/format/properties/enum/enum",keyword:"enum",params:{allowedValues: schema76.properties.enum.enum},message:"must be equal to one of the allowed values"};
+const err112 = {instancePath:instancePath+"/crosstab/format/enum",schemaPath:"#/$defs/format/properties/enum/enum",keyword:"enum",params:{allowedValues: schema79.properties.enum.enum},message:"must be equal to one of the allowed values"};
 if(vErrors === null){
 vErrors = [err112];
 }
@@ -6941,7 +7215,7 @@ errors++;
 if(data50.ref !== undefined){
 let data59 = data50.ref;
 if(!((data59 === "title") || (data59 === "path"))){
-const err113 = {instancePath:instancePath+"/crosstab/format/ref",schemaPath:"#/$defs/format/properties/ref/enum",keyword:"enum",params:{allowedValues: schema76.properties.ref.enum},message:"must be equal to one of the allowed values"};
+const err113 = {instancePath:instancePath+"/crosstab/format/ref",schemaPath:"#/$defs/format/properties/ref/enum",keyword:"enum",params:{allowedValues: schema79.properties.ref.enum},message:"must be equal to one of the allowed values"};
 if(vErrors === null){
 vErrors = [err113];
 }
@@ -6954,7 +7228,7 @@ errors++;
 if(data50.doc !== undefined){
 let data60 = data50.doc;
 if(!((data60 === "preview") || (data60 === "link"))){
-const err114 = {instancePath:instancePath+"/crosstab/format/doc",schemaPath:"#/$defs/format/properties/doc/enum",keyword:"enum",params:{allowedValues: schema76.properties.doc.enum},message:"must be equal to one of the allowed values"};
+const err114 = {instancePath:instancePath+"/crosstab/format/doc",schemaPath:"#/$defs/format/properties/doc/enum",keyword:"enum",params:{allowedValues: schema79.properties.doc.enum},message:"must be equal to one of the allowed values"};
 if(vErrors === null){
 vErrors = [err114];
 }
@@ -7041,8 +7315,8 @@ return errors === 0;
 validate39.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
 export const marks = validate51;
-const schema96 = {"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"urn:tsheet:meta:marks:0.1","title":"tsheet形式 手動書式 v0.1","description":"views/<name>.marks.json。レコード単位・セル単位の手動書式と行高。キーはレコード id。","type":"object","required":["specVersion","view","records"],"properties":{"$schema":{"type":"string"},"specVersion":{"const":"0.1"},"view":{"type":"string","pattern":"^[a-z][A-Za-z0-9_-]{0,63}$"},"records":{"type":"object","propertyNames":{"pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"additionalProperties":{"$ref":"#/$defs/recordMark"}}},"additionalProperties":false,"$defs":{"recordMark":{"type":"object","minProperties":1,"properties":{"height":{"type":"number","minimum":16,"maximum":400},"style":{"$ref":"urn:tsheet:meta:view:0.1#/$defs/style"},"note":{"type":"string","maxLength":500},"cells":{"type":"object","minProperties":1,"propertyNames":{"pattern":"^[a-z][A-Za-z0-9_]{0,63}$"},"additionalProperties":{"type":"object","minProperties":1,"properties":{"style":{"$ref":"urn:tsheet:meta:view:0.1#/$defs/style"},"note":{"type":"string","maxLength":500}},"additionalProperties":false}}},"additionalProperties":false}}};
-const schema97 = {"type":"object","minProperties":1,"properties":{"height":{"type":"number","minimum":16,"maximum":400},"style":{"$ref":"urn:tsheet:meta:view:0.1#/$defs/style"},"note":{"type":"string","maxLength":500},"cells":{"type":"object","minProperties":1,"propertyNames":{"pattern":"^[a-z][A-Za-z0-9_]{0,63}$"},"additionalProperties":{"type":"object","minProperties":1,"properties":{"style":{"$ref":"urn:tsheet:meta:view:0.1#/$defs/style"},"note":{"type":"string","maxLength":500}},"additionalProperties":false}}},"additionalProperties":false};
+const schema101 = {"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"urn:tsheet:meta:marks:0.1","title":"tsheet形式 手動書式 v0.1","description":"views/<name>.marks.json。レコード単位・セル単位の手動書式と行高。キーはレコード id。","type":"object","required":["specVersion","view","records"],"properties":{"$schema":{"type":"string"},"specVersion":{"const":"0.1"},"view":{"type":"string","pattern":"^[a-z][A-Za-z0-9_-]{0,63}$"},"records":{"type":"object","propertyNames":{"pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"additionalProperties":{"$ref":"#/$defs/recordMark"}}},"additionalProperties":false,"$defs":{"recordMark":{"type":"object","minProperties":1,"properties":{"height":{"type":"number","minimum":16,"maximum":400},"style":{"$ref":"urn:tsheet:meta:view:0.1#/$defs/style"},"note":{"type":"string","maxLength":500},"cells":{"type":"object","minProperties":1,"propertyNames":{"pattern":"^[a-z][A-Za-z0-9_]{0,63}$"},"additionalProperties":{"type":"object","minProperties":1,"properties":{"style":{"$ref":"urn:tsheet:meta:view:0.1#/$defs/style"},"note":{"type":"string","maxLength":500}},"additionalProperties":false}}},"additionalProperties":false}}};
+const schema102 = {"type":"object","minProperties":1,"properties":{"height":{"type":"number","minimum":16,"maximum":400},"style":{"$ref":"urn:tsheet:meta:view:0.1#/$defs/style"},"note":{"type":"string","maxLength":500},"cells":{"type":"object","minProperties":1,"propertyNames":{"pattern":"^[a-z][A-Za-z0-9_]{0,63}$"},"additionalProperties":{"type":"object","minProperties":1,"properties":{"style":{"$ref":"urn:tsheet:meta:view:0.1#/$defs/style"},"note":{"type":"string","maxLength":500}},"additionalProperties":false}}},"additionalProperties":false};
 
 function validate53(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -7084,7 +7358,7 @@ let valid2 = false;
 let passing0 = null;
 const _errs5 = errors;
 if(!(((((((((data0 === "gray") || (data0 === "red")) || (data0 === "orange")) || (data0 === "yellow")) || (data0 === "green")) || (data0 === "teal")) || (data0 === "blue")) || (data0 === "purple")) || (data0 === "pink"))){
-const err2 = {instancePath:instancePath+"/bg",schemaPath:"#/$defs/color/oneOf/0/enum",keyword:"enum",params:{allowedValues: schema89.oneOf[0].enum},message:"must be equal to one of the allowed values"};
+const err2 = {instancePath:instancePath+"/bg",schemaPath:"#/$defs/color/oneOf/0/enum",keyword:"enum",params:{allowedValues: schema94.oneOf[0].enum},message:"must be equal to one of the allowed values"};
 if(vErrors === null){
 vErrors = [err2];
 }
@@ -7100,7 +7374,7 @@ passing0 = 0;
 }
 const _errs6 = errors;
 if(typeof data0 === "string"){
-if(!pattern38.test(data0)){
+if(!pattern42.test(data0)){
 const err3 = {instancePath:instancePath+"/bg",schemaPath:"#/$defs/color/oneOf/1/pattern",keyword:"pattern",params:{pattern: "^#[0-9A-Fa-f]{6}$"},message:"must match pattern \""+"^#[0-9A-Fa-f]{6}$"+"\""};
 if(vErrors === null){
 vErrors = [err3];
@@ -7161,7 +7435,7 @@ let valid4 = false;
 let passing1 = null;
 const _errs11 = errors;
 if(!(((((((((data1 === "gray") || (data1 === "red")) || (data1 === "orange")) || (data1 === "yellow")) || (data1 === "green")) || (data1 === "teal")) || (data1 === "blue")) || (data1 === "purple")) || (data1 === "pink"))){
-const err6 = {instancePath:instancePath+"/fg",schemaPath:"#/$defs/color/oneOf/0/enum",keyword:"enum",params:{allowedValues: schema89.oneOf[0].enum},message:"must be equal to one of the allowed values"};
+const err6 = {instancePath:instancePath+"/fg",schemaPath:"#/$defs/color/oneOf/0/enum",keyword:"enum",params:{allowedValues: schema94.oneOf[0].enum},message:"must be equal to one of the allowed values"};
 if(vErrors === null){
 vErrors = [err6];
 }
@@ -7177,7 +7451,7 @@ passing1 = 0;
 }
 const _errs12 = errors;
 if(typeof data1 === "string"){
-if(!pattern38.test(data1)){
+if(!pattern42.test(data1)){
 const err7 = {instancePath:instancePath+"/fg",schemaPath:"#/$defs/color/oneOf/1/pattern",keyword:"pattern",params:{pattern: "^#[0-9A-Fa-f]{6}$"},message:"must match pattern \""+"^#[0-9A-Fa-f]{6}$"+"\""};
 if(vErrors === null){
 vErrors = [err7];
