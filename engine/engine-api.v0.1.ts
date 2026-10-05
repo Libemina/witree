@@ -204,9 +204,12 @@ export type Resolution = { conflict: Conflict; choose: "local" | "disk" } | { co
 // ---------------------------------------------------------------------------
 export interface LoadResult { diagnostics: Diagnostic[]; readOnly: boolean; readOnlyReason?: "schemaError" | "versionMismatch" | "conflictMarkers" | "truncated" }
 
+/** `unpack` の結果。構造不正（D21）があっても失敗にはせず、解析できた範囲の `parts` と D21 の `diagnostics` を返す（§11） */
+export interface UnpackResult { parts: PartMap; diagnostics: Diagnostic[] }
+
 export interface Engine {
   // ライフサイクル
-  load(parts: PartMap): Promise<Result<LoadResult>>;
+  load(parts: PartMap, opts?: { unpackDiagnostics?: Diagnostic[] }): Promise<Result<LoadResult>>;   // 単一ファイルから開くときは unpack の diagnostics を渡す。D21 があれば truncated（§4）
   serialize(): Promise<PartMap>;                          // 正規化済み。docs も含む
   contentHash(): Promise<string>;
 
@@ -234,13 +237,24 @@ export interface Engine {
 
   // 形式変換（純粋関数。load 不要）
   pack(parts: PartMap): Promise<string>;
-  unpack(single: string): Promise<Result<PartMap>>;
+  unpack(single: string): Promise<UnpackResult>;           // D21 では失敗にせず、解析できたパートと診断を返す
 
   // ユーティリティ
-  orderBetween(a: Order | null, b: Order | null): Order;
-  newId(): NodeId;
-  version(): { engine: string; spec: "0.1" };
+  version(): Promise<{ engine: string; spec: "0.1" }>;
 }
+// Engine のメソッドはすべて Promise を返す（仕様 §1）。同期の orderBetween / newId は Engine に含めない（ADR-0002）：
+// - orderBetween はエンジンの状態に依存しない純粋関数なので、tsheet-core の単独エクスポート（下記 OrderBetween）とする
+// - id の採番は Host の責務（Host.ids.newId()）であり、呼び出し側は自分の Host から取る
+
+// ---------------------------------------------------------------------------
+// 単独エクスポート（Engine に属さない純粋関数。Worker メッセージにはならず、呼び出し側のスレッドで同期に呼ぶ）
+// ---------------------------------------------------------------------------
+/**
+ * a と b の間に入る order を返す（仕様 §5.2、本体仕様 §11「order の扱い」）。
+ * a が null なら先頭、b が null なら末尾への挿入。a < b なら a < 結果 < b（コードポイント順）。
+ * tsheet-core が `orderBetween` としてエクスポートする実装はこの型に従う（L-09）。
+ */
+export type OrderBetween = (a: Order | null, b: Order | null) => Order;
 
 // ---------------------------------------------------------------------------
 // Worker メッセージ

@@ -1,24 +1,38 @@
 // 単一ファイル形式（`.tsheet`）の pack / unpack（本体仕様 §2.2、エンジン API 仕様 §11）。
 // どちらも `load` 不要の純粋関数で、Host を必要としない。
 //
+// 構造不正（D21）があっても `unpack` は失敗にせず、解析できた範囲のパートと D21 の診断を `UnpackResult` で返す
+// （#98 の決定。Host はこれを `load` に渡し、読み取り専用で開く）。原因（`detail.reason`）ごとの復旧の仕方：
+//
+//  | reason               | 診断の位置                | 返すパート                                                     |
+//  |----------------------|---------------------------|----------------------------------------------------------------|
+//  | missing-header       | 1 行目                    | 1 行目を先頭行とみなさず、1 行目から区切り行として解析する      |
+//  | unsupported-version  | 1 行目                    | 2 行目から通常どおり解析する                                   |
+//  | missing-end          | 最終行                    | 最後の（途切れた）パートも含めてすべて返す                     |
+//  | invalid-path         | その `%%part` 行          | そのパートの内容を読み飛ばす（順序の検査にも使わない）         |
+//  | part-order           | その `%%part` 行（part）  | 順序違反のパートはそのまま返す。重複は最初のものを残し、後のものの内容を読み飛ばす |
+//  | unknown-directive    | その行（part）            | その行だけを読み飛ばす（パートの内容には含めない）             |
+//  | content-outside-part | 最初の該当行              | 最初の `%%part` より前の内容を読み飛ばす（診断は 1 件にまとめる） |
+//  | content-after-end    | `%%end` の次の行          | `%%end` より後ろをすべて読み飛ばす                             |
+//
 // 仕様に明記がなく、保守的に解釈した点（PR の「仕様の確認事項」にも記載）：
-//  1. D21 はすべて `ok: false` で返す。`%%end` の欠落（途切れ）でも、途中までのパートは返さない。
-//  2. `%%tsheet` のバージョンが対応バージョンと異なるファイルは D21 として拒否する。
-//  3. パートパスは §2.2 規則 4 の順序に位置づけられるもの（`workbook.json`・`schema.json`・`views/…`・
-//     `data.jsonl`・`docs/…`）だけを受理する。それ以外は順序が定まらないので「不正なパートパス」とする。
+//  1. `%%tsheet` のバージョンが対応バージョンと完全一致しないファイルは D21（unsupported-version）とする（§2.2 規則 2）。
+//  2. パートパスは §2.2 規則 4 の順序に位置づけられるもの（`workbook.json`・`schema.json`・`views/…`・
+//     `data.jsonl`・`docs/…`）だけを受理する。それ以外は順序が定まらないので「不正なパートパス」とする（規則 3）。
 //     `..` は「含んではならない」の文言どおり、セグメント単位ではなく部分文字列として拒否する。
 //     `\`・制御文字・空のセグメント・`.` のセグメントも拒否する。
-//  4. 同じパスのパートが 2 回現れた場合は、パート順序の違反（D21）とする。
-//  5. `%%end` の後ろに許すのは改行 1 つだけ。それ以外の内容（空行を含む）があれば D21 とする。
-//  6. `%%` で始まり `%%%` で始まらない行は区切り行としてだけ解釈する。`%%part <path>`・`%%end` の
+//  3. 同じパスのパートが 2 回現れた場合は、パート順序の違反（D21）とする。
+//  4. `%%end` の後ろに許すのは改行 1 つだけ。それ以外の内容（空行を含む）があれば D21 とする。
+//  5. `%%` で始まり `%%%` で始まらない行は区切り行としてだけ解釈する。`%%part <path>`・`%%end` の
 //     どちらにも一致しない行（未知の指示、末尾に空白のある `%%end`、2 行目以降の `%%tsheet`）は D21 とする。
-//  7. 規則 3 により、パートの内容は「改行で終わる行の並び」としてしか表現できない。`pack` は、空でなく
-//     改行で終わらない内容に改行を 1 つ補う（空の内容は 0 行のまま往復する）。
-//  8. `pack` は契約上エラーを返す経路がない（`Promise<string>`）。不正なパスを含む `PartMap` からは
+//  6. 規則 3 により、パートの内容は「改行で終わる行の並び」としてしか表現できない。`pack` は、空でなく
+//     改行で終わらない内容に改行を 1 つ補う（空の内容は 0 行のまま往復する）。`unpack` も、途切れて改行で
+//     終わらない最終行に改行を補う。
+//  7. `pack` は契約上エラーを返す経路がない（`Promise<string>`）。不正なパスを含む `PartMap` からは
 //     読み戻せないファイルしか作れないので、例外を投げる。
-//  9. 規則 1 の正規化は、`pack` では各パートの内容にも適用する（CRLF → LF、先頭の BOM の除去）。
+//  8. 規則 1 の正規化は、`pack` では各パートの内容にも適用する（CRLF → LF、先頭の BOM の除去）。
 //     単独の CR は改行として扱わず、そのまま残す。
-import type { Diagnostic, PartMap, PartPath, Result } from "./api.ts";
+import type { Diagnostic, PartMap, PartPath, UnpackResult } from "./api.ts";
 import { compareCodePoints } from "./compare.ts";
 import { FORMAT_VERSION } from "./version.ts";
 
@@ -61,7 +75,7 @@ function hasControlChar(s: string): boolean {
   return false;
 }
 
-/** パートパスとして受理できるか（§2.2 規則 3・4、冒頭の注 3）。 */
+/** パートパスとして受理できるか（§2.2 規則 3・4、冒頭の注 2）。 */
 function isValidPartPath(path: string): boolean {
   if (partRank(path) < 0) return false; // 絶対パス（先頭の `/`）やドライブ名もここで落ちる
   if (path.includes("..") || path.includes("\\") || hasControlChar(path)) return false;
@@ -77,7 +91,7 @@ function normalizeText(text: string): string {
 /**
  * パートの集合を単一ファイル形式のテキストにする（§2.2）。
  * 出力は LF・BOM なしで、パートの順序は `parts` のキーの順序によらず固定される。
- * 不正なパートパスがあれば TypeError を投げる（冒頭の注 8）。
+ * 不正なパートパスがあれば TypeError を投げる（冒頭の注 7）。
  */
 export function pack(parts: PartMap): string {
   const paths = Object.keys(parts);
@@ -94,7 +108,7 @@ export function pack(parts: PartMap): string {
     const content = normalizeText(parts[path] ?? "");
     if (content === "") continue;
     const lines = content.split("\n");
-    // 改行で終わる内容は末尾に空要素ができる。終わらない内容には最終行の改行を補うことになる（冒頭の注 7）。
+    // 改行で終わる内容は末尾に空要素ができる。終わらない内容には最終行の改行を補うことになる（冒頭の注 6）。
     if (lines[lines.length - 1] === "") lines.pop();
     for (const line of lines) {
       out += line.startsWith("%%") ? `%${line}\n` : `${line}\n`;
@@ -105,13 +119,14 @@ export function pack(parts: PartMap): string {
 
 /**
  * 単一ファイル形式のテキストをパートの集合に戻す（§2.2）。CRLF と BOM を受理する。
- * 構造が不正な場合は D21 を `errors` に入れて `ok: false` を返す。原因は `detail.reason`（UnpackErrorReason）、
- * 位置は `at.line`（単一ファイル内の 1 始まりの行番号）で示す。
+ * 構造が不正でも例外や失敗にはせず、解析できた範囲の `parts` と D21 の `diagnostics` を返す（冒頭の表）。
+ * 正しいファイルでは `diagnostics` は空になる。D21 の原因は `detail.reason`（UnpackErrorReason）、
+ * 位置は `at.line`（単一ファイル内の 1 始まりの行番号）と `at.part` で示す。
  */
-export function unpack(single: string): Result<PartMap> {
-  const errors: Diagnostic[] = [];
+export function unpack(single: string): UnpackResult {
+  const diagnostics: Diagnostic[] = [];
   const d21 = (reason: UnpackErrorReason, message: string, line: number, part?: PartPath): void => {
-    errors.push({
+    diagnostics.push({
       code: "D21",
       severity: "error",
       message,
@@ -122,14 +137,15 @@ export function unpack(single: string): Result<PartMap> {
 
   const lines = normalizeText(single).split("\n");
   const header = lines[0] ?? "";
+  let start = 1; // 区切り行の解析を始める行（0 始まりの添字）
   if (!header.startsWith(HEADER_PREFIX)) {
     d21("missing-header", "1 行目が `%%tsheet <specVersion>` ではありません", 1);
-    return { ok: false, errors };
-  }
-  const version = header.slice(HEADER_PREFIX.length);
-  if (version !== FORMAT_VERSION) {
-    d21("unsupported-version", `対応していない形式バージョンです: ${JSON.stringify(version)}（対応: ${FORMAT_VERSION}）`, 1);
-    return { ok: false, errors };
+    start = 0; // 先頭行がないので、1 行目も区切り行・内容として解析する
+  } else {
+    const version = header.slice(HEADER_PREFIX.length);
+    if (version !== FORMAT_VERSION) {
+      d21("unsupported-version", `対応していない形式バージョンです: ${JSON.stringify(version)}（対応: ${FORMAT_VERSION}）`, 1);
+    }
   }
 
   // キーは isValidPartPath を通ったものだけなので、`__proto__` などが入ることはない。
@@ -146,7 +162,7 @@ export function unpack(single: string): Result<PartMap> {
     buffer = "";
   };
 
-  let i = 1;
+  let i = start;
   for (; i < lines.length; i++) {
     const line = lines[i] ?? "";
     const lineNo = i + 1;
@@ -159,7 +175,7 @@ export function unpack(single: string): Result<PartMap> {
       }
       if (!line.startsWith(PART_PREFIX)) {
         d21("unknown-directive", `解釈できない区切り行です: ${JSON.stringify(line)}`, lineNo, current);
-        continue;
+        continue; // この行だけを読み飛ばす
       }
       flush();
       inPart = true;
@@ -167,7 +183,7 @@ export function unpack(single: string): Result<PartMap> {
       const path = line.slice(PART_PREFIX.length);
       if (!isValidPartPath(path)) {
         d21("invalid-path", `不正なパートパスです: ${JSON.stringify(path)}`, lineNo);
-        continue;
+        continue; // current が undefined のままなので、このパートの内容は読み飛ばされる
       }
       if (previous !== undefined && comparePartPaths(previous, path) >= 0) {
         const message =
@@ -176,7 +192,7 @@ export function unpack(single: string): Result<PartMap> {
             : `パートの順序が不正です: ${path} は ${previous} より前になければなりません`;
         d21("part-order", message, lineNo, path);
       }
-      // 重複したパートは最初の内容を残す（どのみち ok: false になる）。
+      // 重複したパートは最初の内容を残し、後のものの内容は読み飛ばす。順序違反だけのパートはそのまま受け取る。
       if (!Object.hasOwn(parts, path)) current = path;
       previous = path;
       continue;
@@ -191,11 +207,11 @@ export function unpack(single: string): Result<PartMap> {
   }
 
   if (!ended) {
+    flush(); // 途切れた最後のパートも返す
     d21("missing-end", "`%%end` がありません（ファイルが途中で途切れています）", lines.length);
   } else if (!(i === lines.length || (i === lines.length - 1 && lines[i] === ""))) {
     d21("content-after-end", "`%%end` の後ろに内容があります", i + 1);
   }
 
-  if (errors.length > 0) return { ok: false, errors };
-  return { ok: true, value: parts, diagnostics: [] };
+  return { parts, diagnostics };
 }

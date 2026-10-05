@@ -12,7 +12,7 @@ tsheet-core は、tsheet 形式のワークブックを読み込み、検証・�
 | 決定的 | 同じ `Host` の応答と同じ入力に対して、常に同じ出力（`serialize()` は 1 バイトも違わない） |
 | Op 単位 | すべての変更は自己完結した Op の列（トランザクション）として渡す。エンジンが状態を勝手に変えることはない |
 | 責務の集中 | 検証・計算・射影（フィルタ・ソート・crosstab・書式判定）・逆操作の生成・マージはエンジンが行う。UI は表示と入力、Host はファイル・ロック・スナップショット・自動保存を担う |
-| 非同期・Result 型 | 外部インターフェースはすべて `Promise` を返す。拒否・衝突・診断は戻り値で返し、例外はエンジン内部の不整合にのみ使う |
+| 非同期・Result 型 | `Engine` のメソッドはすべて `Promise` を返す（Worker 越しに呼ぶため、同期のメソッドは置かない）。エンジンの状態に依存しない純粋関数（`orderBetween`、§5.2）は `Engine` に含めず、tsheet-core の単独エクスポートとして呼び出し側のスレッドで同期に呼ぶ（ADR-0002）。拒否・衝突・診断は戻り値で返し、例外はエンジン内部の不整合にのみ使う |
 
 ## 2. 構成
 
@@ -40,7 +40,7 @@ CLI（Node）  ──直接呼び出し──▶  tsheet-core          ◀──
 
 | メソッド | 内容 |
 |---|---|
-| `load(parts)` | パートを解析し、スキーマの意味検証（S 系）、データの構造検証（D01〜D09、D19、D22）、実効値の計算、値の検証（D10〜D18、D20、D23）、View の検証（V 系）を行う。`readOnly` の条件は本体仕様 §12 に従う（S 系 error、schemaVersion 不一致、コンフリクトマーカー、単一ファイルの途切れ） |
+| `load(parts, opts?)` | パートを解析し、スキーマの意味検証（S 系）、データの構造検証（D01〜D09、D19、D22）、実効値の計算、値の検証（D10〜D18、D20、D23）、View の検証（V 系）を行う。`readOnly` の条件は本体仕様 §12 に従う（S 系 error、schemaVersion 不一致、コンフリクトマーカー、単一ファイルの途切れ）。単一ファイルから開くときは、Host が `unpack` の `parts` と `diagnostics` をそれぞれ `parts` と `opts.unpackDiagnostics` に渡す。`unpackDiagnostics` に D21 が 1 件でもあれば、単一ファイルの途切れ（構造不正）として読み取り専用で開き（`readOnlyReason: "truncated"`）、その診断を `LoadResult.diagnostics` に含める |
 | `serialize()` | 正規化済みの `PartMap` を返す（本体仕様 §11.1、View仕様 §10）。doc の本文、`params` を含む `workbook.json` も含む |
 | `contentHash()` | `serialize()` 結果全体のハッシュ。Host は保存時にこれを記録し、外部変更の検出に使う |
 
@@ -60,7 +60,9 @@ CLI（Node）  ──直接呼び出し──▶  tsheet-core          ◀──
 
 ### 5.2 自己完結性
 
-Op は「選択中の行の下」「最後の兄弟の後ろ」のような相対指定を持たない。`create` と `move` の `order` は呼び出し側が `orderBetween(a, b)` で求めて渡し、`create` の `id` は `newId()` で採番して渡す。これにより、同じ Op の列をどの環境で再生しても同じ結果になり、Undo・スナップショット比較・将来の CRDT 化に共通の基盤ができる。
+Op は「選択中の行の下」「最後の兄弟の後ろ」のような相対指定を持たない。`create` と `move` の `order` は呼び出し側が `orderBetween(a, b)` で求めて渡し、`create` の `id` は呼び出し側の `Host.ids.newId()` で採番して渡す。これにより、同じ Op の列をどの環境で再生しても同じ結果になり、Undo・スナップショット比較・将来の CRDT 化に共通の基盤ができる。
+
+`orderBetween(a: Order | null, b: Order | null): Order` は、同じ親の下で隣接する 2 つの `order` の間に入る値を返す純粋関数である（本体仕様 §11「order の扱い」。`a` が `null` なら先頭、`b` が `null` なら末尾への挿入。`a < b` なら `a < 結果 < b` がコードポイント順で成り立つ）。エンジンの状態に依存しないため `Engine` のメソッドではなく、tsheet-core の単独エクスポート（契約の `OrderBetween` 型）として提供し、UI は Worker を経由せずメインスレッドで同期に呼ぶ。`id` の採番も同様に `Engine` の責務ではなく、`Host` の責務である（§3）。
 
 ### 5.3 トランザクション
 
@@ -69,6 +71,8 @@ Op は「選択中の行の下」「最後の兄弟の後ろ」のような相�
 `preview(tx)` は `apply(tx)` と同じ結果を返すが状態を変えない。破壊的なスキーマ変更や大量の貼り付けの前に、UI が件数や診断を提示するために使う。
 
 ## 6. 適用の規則
+
+エンジンは `apply` の開始時に `Host.clock.now()` を 1 回だけ読み、そのトランザクションで書き込むすべての `created` / `updated`（本体仕様 §11.2）にその値を使う。したがって `create` が書く `created` と `updated` は同じ値になり、1 つのトランザクションで変更された複数のレコードの `updated` も同じ値になる。Undo / Redo（`inverse` トランザクションの適用、§6.5）も通常の `apply` であり、その時点で改めて `now()` を読む。
 
 ### 6.1 拒否と受理
 
@@ -113,6 +117,24 @@ Op は「選択中の行の下」「最後の兄弟の後ろ」のような相�
 `apply` の結果には、同じ状態に戻す `inverse` トランザクションが含まれる。エンジンは自動生成した Op（参照解除、marks 削除、スキーマ変更に伴う書き換え）も含めて逆操作を作る。`delete` の逆は削除したサブツリー・doc・marks の再作成である。逆操作の `id`・`order`・値はすべて元の値を保持する。
 
 履歴（Undo / Redo スタック）は Host が保持する（セッション内。自動保存の後も遡れるようにするため、履歴はファイルに保存せず、エンジンは逆操作の生成だけを担う）。外部変更を取り込んだ後（§10）も履歴は保持し、対象ノードが存在しなくなった Op は `apply` 時に E08 で拒否されるため、Host はそのトランザクションを飛ばして次の履歴に進み、利用者に通知する。
+
+### 6.6 システム項目の書き込み
+
+`apply` は、本体仕様 §11.2 のシステム項目（`created` / `updated` / `createdBy` / `updatedBy`）を次の表に従って書き込む。システム項目は `values` の外にあり、Op で直接は書けない（スキーマにないフィールドへの `set` は E01）。書き込みは Op の副作用であり、`inverse` にも Op としては現れない。
+
+| Op | `created` / `createdBy` | `updated` / `updatedBy` |
+|---|---|---|
+| `create` | 書く | 書く（`created` と同じ値） |
+| `set` / `unset` / `setDoc` | 変えない | 対象ノードに書く |
+| `move` | 変えない | 対象ノードに書く。旧親・新親は変えない |
+| `delete` | — | 親・祖先は変えない |
+| エンジンが自動生成する Op（§6.3 の参照解除、§6.4 のスキーマ変更に伴う値の除去・変換） | 変えない | 書き換えたノードに書く |
+| Undo / Redo（`inverse` の適用） | 変えない（`delete` の逆操作で再作成するノードは `create` として書く） | 対象ノードに書く（元の値には戻さない） |
+| データの書き換えを伴わない `SchemaOp`・`ViewOp`・`MarksOp`・`ParamOp` | 変えない | 変えない |
+
+- `created` / `updated` の値は `Host.clock.now()`、`createdBy` / `updatedBy` の値は `Host.actor` である（§3）。
+- 子の追加・削除・移動は親の `updated` を変えない（ロールアップの再計算は変更ではない。本体仕様 §11.2）。`preview` は状態を変えないので何も書かず、`load` は欠けている項目を補わない。
+- `createdBy` / `updatedBy` は、`settings.privacy.recordActors` が `true`（既定）で、かつ `Host.actor` が設定されているときだけ、`created` / `updated` と同時に同じ Op で書く。どちらかを満たさないときは書かず、`updated` を書く Op では既存の `updatedBy` を除去する（`updated` と `updatedBy` が別の変更を指す状態を作らない）。`createdBy` は `create` 以外では変えない。`recordActors: false` のワークブックに残っている識別子は `apply` では触れず、保存時の正規化で除去する（本体仕様 §2.5、D23）。`created` / `updated` は `recordActors` の影響を受けない。
 
 ## 7. 計算
 
@@ -178,6 +200,8 @@ MVP は **全体再計算＋メモ化** とする。`apply` のたびに、依�
 
 「未設定」と `null` は区別して比較する。比較は保存形式の値で行い、実効値は使わない。
 
+システム項目（`created` / `updated` / `createdBy` / `updatedBy`。本体仕様 §11.2）は上の表の対象外で、衝突にしない。両側に残るレコードについて、`created` は local と disk の小さい方、`updated` は大きい方を採る（RFC 3339 の UTC 固定表記なので、コードポイント順の比較が時刻順と一致する）。`createdBy` / `updatedBy` は、それぞれ `created` / `updated` の値を採った側の値に従う（その側に無ければ書かない）。片方にだけある項目はその値を採る。この規則は他のフィールドが衝突しているレコードにも適用し、`resolve()` で local / disk を選んでも変えない（解決のトランザクション自体による `updated` の書き込みは §6.6 に従う）。
+
 ### 10.3 View・marks・params
 
 View 定義は JSON のキー単位（`columns` は `field` をキー、`rules` は `id` をキー、その他はパス）、marks はレコード ID・フィールド ID をキーとして同じ規則でマージする。params はデータのフィールドと同じ規則に従う。
@@ -195,17 +219,20 @@ View 定義は JSON のキー単位（`columns` は `field` をキー、`rules` 
 ## 11. 差分と形式変換
 
 - `diff(a, b)` は 2 つの `PartMap` をレコード単位で比較し、作成・削除・移動・更新の一覧と変わったパートを返す。スナップショットの比較・復元、CLI の `diff` コマンドに使う。
-- `pack` / `unpack` は本体仕様 §2.2 の変換で、`load` 不要の純粋関数である。`unpack` は D21（構造不正）を返しうる。
+- `pack` / `unpack` は本体仕様 §2.2 の変換で、`load` 不要の純粋関数である。
+- `unpack` は `UnpackResult`（`parts` と `diagnostics`）を返す。構造不正（D21）があっても失敗や例外にはせず、解析できた範囲のパートを `parts` に、D21 を `diagnostics` に入れて返す（途切れたファイルでは最後の途切れたパートまで含める。不正なパートパスのパートの内容、解釈できない区切り行、最初の `%%part` より前と `%%end` より後ろの内容は読み飛ばす。重複したパートは最初のものを残す）。各 D21 は `detail.reason` で原因を、`at.line`（単一ファイル内の 1 始まりの行番号）と `at.part` で位置を示す。Host はこの結果を `load` に渡し、ワークブックを読み取り専用で開く（§4）。
 
 ## 12. Worker メッセージ
 
 | 種別 | 形式 |
 |---|---|
-| 要求 | `{ id, method, params }`。`method` は `Engine` のメソッド名、`params` は引数の配列 |
+| 要求 | `{ id, method, params }`。`method` は `Engine` のメソッド名、`params` は引数の配列。`Engine` のメソッドはすべて `Promise` を返すので、すべての要求を同じ形式で扱える |
 | 応答 | `{ id, result }` または `{ id, error: { code, message, data } }`。`error` はエンジン内部エラー（例外相当）にのみ使い、拒否や衝突は `result` の `Result` 型で返す |
 | イベント | `changes`（`apply` / `resolve` 後）、`diagnostics`（診断の増減）、`progress`（`load` や大規模な `apply` の進捗） |
 
 要求は到着順に直列で処理する。`project` のような読み取りも `apply` と同じキューに入るため、UI は「apply の応答を待ってから project を呼ぶ」だけで整合が取れる。大きな `PartMap` の受け渡しは、Worker の構造化クローンのコストを避けるため、文字列は `Transferable`（`ArrayBuffer`）で渡してよい。
+
+`orderBetween` と `id` の採番はメッセージにならない。`orderBetween` は tsheet-core の単独エクスポート（§5.2）を UI がメインスレッドで直接呼び、`id` は UI 側の `Host.ids.newId()` から取る。Op を組み立てる時点で Worker との往復が不要になるため、入力のたびに応答を待つ必要がない。
 
 ## 13. エラーコード（E 系）
 
@@ -220,7 +247,7 @@ View 定義は JSON のキー単位（`columns` は `field` をキー、`rules` 
 
 ## 14. バージョニングと決定性の保証
 
-- エンジンのパッケージは semver で管理し、`version()` で `{ engine, spec }` を返す。API の破壊的変更はメジャーバージョンで示す。仕様の `specVersion` とは独立に進める。
+- エンジンのパッケージは semver で管理し、`version()` で `{ engine, spec }` を返す（他のメソッドと同じく `Promise`）。API の破壊的変更はメジャーバージョンで示す。仕様の `specVersion` とは独立に進める。
 - 型定義から JSON Schema（Op・Transaction・Message 用）を生成し、CLI の入力検証と MCP サーバーのスキーマに使う。
 - CI では、Node.js とブラウザ（Vitest ブラウザモード）の両方で同じ `PartMap` を `load` → `serialize` し、`contentHash()` が一致することを確認する（ゴールデンテスト）。トランザクションの適用と `inverse` の適用で元に戻ることも同様に検証する。
 
