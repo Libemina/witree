@@ -163,8 +163,9 @@ views/
 | `$id` | レコード ID（読み取り専用） |
 | `$created` / `$updated` | 作成日時・最終更新日時（本体仕様 §11.2）。datetime として扱い、`format` の `datetime` でローカル時刻の表記にできる。読み取り専用。`updated` が無いレコードは `created` と同じとみなす |
 | `$createdBy` / `$updatedBy` | 作成者・最終更新者の識別子（本体仕様 §11.2）。string として扱う。読み取り専用 |
+| `$expr:<id>` | 計算列（§6.4）。`expr` の式を各行で評価した結果を表示する。`<id>` は列の識別子（`^[a-z][A-Za-z0-9_]{0,63}$`）で、View 内で一意。読み取り専用 |
 
-同じ `field` を複数の列に指定してはならない（V03）。計算フィールド（rollup / formula）と継承値は編集不可として表示し、継承値は通常の値と区別できる見た目にする（本体仕様 §8.2）。
+同じ `field` を複数の列に指定してはならない（V03。計算列の `<id>` の重複も同じ）。計算フィールド（rollup / formula）と継承値は編集不可として表示し、継承値は通常の値と区別できる見た目にする（本体仕様 §8.2）。
 
 システム項目の特殊列（`$created` / `$updated` / `$createdBy` / `$updatedBy`）は、列のほか `sort` の `field` にも指定できる（§7.1）。記録されていないレコードでは空値として扱う。`filter` と `rules` の式からは `CREATED()` などで参照する（本体仕様 §10.3）。
 
@@ -172,14 +173,15 @@ views/
 
 | キー | 既定 | 内容 |
 |---|---|---|
-| `label` | スキーマの `label` | 見出しの上書き。`Type.field` でない列に指定した場合、すべての型で共通の見出しになる |
+| `expr` | | 計算列（`field` が `$expr:<id>`）の式（本体仕様 §10）。計算列では必須、それ以外の列には指定できない（メタスキーマで拒否する）。各行のノードを文脈として評価する（§6.4）。`labelExpr` が見出し（行に依存しない）を計算するのに対し、`expr` はセル（行ごと）を計算する |
+| `label` | スキーマの `label` | 見出しの上書き。`Type.field` でない列に指定した場合、すべての型で共通の見出しになる。計算列にはスキーマの `label` がないため、省略時は `<id>` をそのまま見出しにする |
 | `labelExpr` | | 見出しを式で計算する。`label` より優先。行に依存しないため、参照できるのは `root.fieldId`・`TODAY()`・`FORMAT` などノードを文脈としない要素に限る（V15）。例：`"\"FY\" & root.fiscalYear & \" 合計\""` |
 | `width` | 120 | 列幅（px）。`$title` の既定は 240 |
 | `hidden` | `false` | 非表示。列の順序は保ったまま隠す |
 | `pinned` | `false` | 左端に固定。固定列は定義順で左から並べ、非固定列より前に置く |
 | `align` | 型による | `start` / `center` / `end`。既定は number・decimal が `end`、boolean が `center`、それ以外は `start` |
 | `wrap` | `false` | セル内で折り返す。`rows.height: "auto"` のときに行高へ影響する |
-| `readOnly` | `false` | この View では編集させない |
+| `readOnly` | `false` | この View では編集させない。計算列は指定にかかわらず常に読み取り専用 |
 | `format` | | 表示形式（§6.3） |
 
 ### 6.3 format
@@ -198,7 +200,28 @@ views/
 | `ref` | ref | `title`（既定。参照先の `titleTemplate`）/ `path`（祖先を含むパス） |
 | `doc` | doc | `preview`（既定。冒頭のみ）/ `link` |
 
-`format` は表示のみに作用し、保存値・式の評価・エクスポートの値には影響しない。
+`format` は表示のみに作用し、保存値・式の評価・エクスポートの値には影響しない。計算列（§6.4）では、フィールド型の代わりに式の結果型で判定する。計算列にはスキーマの `unit` がないため `unit` は意味を持たない（V05）。
+
+### 6.4 計算列
+
+```json
+{ "field": "$expr:remaining", "expr": "effort * (100 - progress) / 100", "label": "残工数", "width": 80, "format": { "decimals": 1 } }
+```
+
+計算列は、スキーマを変えずに View の中だけで行ごとの値を求める列である。`field` を `$expr:<id>` とし、`expr` に本体仕様 §10 の式を書く。スキーマの `formula`（本体仕様 §8.3）が「データの意味」として値を定義し、どの View からも同じ値を参照できるのに対し、計算列はその View の表示のためのアドホックな計算であり、他の View・式・エクスポートからは参照できない。
+
+| 項目 | 規定 |
+|---|---|
+| 列キー | `$expr:<id>`。`<id>` は `^[a-z][A-Za-z0-9_]{0,63}$`。同じ `<id>` の計算列が重複すれば V03。`RowView.cells` のキー、`sort` の `field`（§7.1）、`rules` の `fields`（§8.1）にも同じ `$expr:<id>` を使う |
+| 文脈と参照範囲 | 各行のノードを文脈として評価する。参照できるのは自ノードのフィールド（`fieldId`）、親ノードのフィールド（`parent.fieldId`）、ルートノードのフィールド（`root.fieldId`）で、本体仕様 §10.1 と同じ規則（`parent.` は親になりうるすべての型に同じ ID・同じ型のフィールドが必要）に従う。いずれも実効値（継承後・計算後）を参照する。`CREATED()` などのノード関数も使える |
+| 評価されない行 | 式が参照するフィールド（`parent.` の参照先を含む）をすべて持つ型の行でだけ評価し、持たない型の行は評価せず空セルにする（`rules` の `when` と同じ扱い。V 系の error にしない）。どの型も参照フィールドを持たない場合は未知の参照として V06 |
+| 結果型 | 式から推論する（本体仕様 §10.1「型」）。評価される型が複数ある場合、結果型はすべての型で同じでなければならない（V02）。doc 型フィールドを参照する式は V08。`format`（§6.3）と `align`（§6.2）の既定は、結果型と同じフィールド型の列と同じ |
+| 保存しない | 計算は宣言であり、結果はデータ（`data.jsonl`）にも View 定義にも保存しない（本体仕様 §11.1）。CLI の `export` にも含めない |
+| 読み取り専用 | 常に編集不可（`readOnly` の指定によらない）。セル書式は `rules` の `target: "cell"` で付けられる。marks のセル単位の書式（§8.2）はキーがフィールド ID であるため、計算列には付けられない |
+| 検証 | 式の構文エラー・未知の参照・型不整合は V06、doc 型の参照は V08（§9）。`filter` と `rules` の式から計算列を参照することはできない（それらは式そのものなので、同じ式を書く） |
+| 制限 | 評価にはエンジン API 仕様 §9 の `ExprLimits` が適用される。制限を超えた行は空セルにし、そのセルに `E20` 相当の診断を付ける |
+
+`treePanel` の `panel.types.<TypeName>.columns`（§5）にも計算列を置ける。その表の型だけを文脈として評価する。`crosstab` の `columns` では、`tree.types` の型だけを対象に検証・評価し、`tree.types` のどの型にもないフィールドを参照する計算列は V14 とする（展開した列のセルの値は参照できない）。
 
 ## 7. ソートとフィルタ
 
@@ -213,6 +236,7 @@ views/
 - 比較には実効値（継承後・計算後）を使う。空値は昇順・降順のいずれでも末尾に置く。
 - `field` にはシステム項目の特殊列（`$created` など。§6.1）も指定できる。`$created` / `$updated` は datetime、`$createdBy` / `$updatedBy` は string として比較し、記録されていないレコードは空値として末尾に置く。
 - `field` を持たない型の兄弟は、持つ型の後ろに `order` 順で並べる。
+- `field` には同じ View の `columns` にある計算列（`$expr:<id>`。§6.4）も指定できる（`hidden` の列でもよい）。式の結果型で比較し、評価されない型（§6.4）の行は `field` を持たない型と同じ扱いにする。`columns` に定義のない `$expr:<id>` は V01。
 - `collation` が `codepoint`（既定）なら本体仕様の決定的順序、`locale` ならアプリのロケールに従う（`Intl.Collator` など）。`locale` は表示専用で、エンジンの動作には影響しない。
 - `sort` が有効な間、ドラッグによる並び替えは **無効** にする。並び替えるには sort を解除する。`order` は手動の並び順であり、sort が書き換えることはない。
 
@@ -252,7 +276,7 @@ views/
 | `types` | 対象型。省略時は `when` を評価できるすべての型 |
 | `when` | 式。ノードを文脈として評価し、`TRUE` のとき適用。空の結果は適用しない |
 | `target` | `row`（既定。行全体）/ `cell`（`fields` の列のみ） |
-| `fields` | `target: "cell"` で必須 |
+| `fields` | `target: "cell"` で必須。フィールド ID のほか、同じ View の計算列（`$expr:<id>`。§6.4）も指定できる |
 | `style` | §8.3 |
 | `stop` | `true` なら、このルールが適用されたノード（`cell` ならそのセル）に後続のルールを適用しない |
 
@@ -311,20 +335,20 @@ View の処理は、本体仕様のデータ検証（D 系）と実効値の計�
 
 | コード | 重大度 | 内容 |
 |---|---|---|
-| V01 | error | `columns` / `sort` / `rules.fields` / `panel.types` が存在しない型・フィールドを参照している |
-| V02 | error | 型を限定しない `field` が、型によって異なるフィールド型に束縛される |
+| V01 | error | `columns` / `sort` / `rules.fields` / `panel.types` が存在しない型・フィールドを参照している（`sort` / `rules.fields` の `$expr:<id>` が同じ View の `columns` にない場合を含む） |
+| V02 | error | 型を限定しない `field` が、型によって異なるフィールド型に束縛される。計算列の `expr` の結果型が、評価される型によって異なる場合も同じ |
 | V03 | error | 同じ `field` の列が重複している |
 | V04 | error | `treeGrid` に `$title` 列がない、または最初の列でない |
 | V05 | warning | `format` にフィールド型と合わないキーがある（無視する） |
-| V06 | error | `rules` / `filter` の式の構文エラー・未知の参照・型不整合（本体仕様 S07 と同じ判定） |
+| V06 | error | `rules` / `filter` の式、計算列の `expr` の構文エラー・未知の参照・型不整合（本体仕様 S07 と同じ判定） |
 | V07 | error | `rules` の `id` が重複している |
-| V08 | error | `sort` / `filter` / `rules` が doc 型フィールドを参照している |
+| V08 | error | `sort` / `filter` / `rules` / 計算列の `expr` が doc 型フィールドを参照している |
 | V09 | warning | `pinned` の列が非固定列より後ろにある（固定列を前に並べ替えて表示する） |
 | V10 | error | marks の `view` に対応する View がない |
 | V11 | warning | marks が存在しないレコード・フィールドを参照している（保存時に削除する） |
 | V12 | error | `workbook.json` の `views` が空でないのに `default` という `name` の View がない |
 | V13 | error | `tree.types` のどの型も `crosstab.sourceType` を子に持たない、`key` / `value` のフィールド型が要件を満たさない、`fn` と `value` の型が合わない、`keys` の範囲や `step` が `key` の型と合わない |
-| V14 | error | `crosstab` の View の `columns` に `tree.types` 以外の型のフィールドがある |
+| V14 | error | `crosstab` の View の `columns` に `tree.types` 以外の型のフィールドがある（計算列の `expr` が `tree.types` のどの型にもないフィールドを参照する場合を含む） |
 | V15 | error | `labelExpr` がノードのフィールドや `parent.` を参照している |
 
 V 系の `error` がある View は開けないが、ワークブック自体は他の View で開ける。
@@ -356,6 +380,8 @@ View の `columns.width` や `sort` を利用者が操作した場合は、**共
 | `default.marks.json` | コア機器の行を太字＋メモ、アクセスポートの速度セルに橙＋メモ、行高の上書き |
 
 `examples/budget/` は crosstab の例である。区分（Category）→ 勘定科目（Account）→ 月別計上（Entry: `period`, `amount`）の 3 段で、`default.view.json` が FY2026（2026-04〜2027-03）の月次表（`root.fiscalYear` を使った `labelExpr`、`root.currentMonth` 以前の未入力セルを黄色にする rule を含む）、`quarterly.view.json` が `step: "quarter"` と `keyLabel: "FYQ"` による会計四半期の読み取り専用表、`entries.view.json` が同じデータの treeGrid 表示。会計年度の開始月は `workbook.json` の `settings.fiscalYearStart` で指定する。区分行の年間合計はスキーマの rollup（`depth: "descendants"`）、各月の区分合計は crosstab の集計で求める。
+
+`examples/wbs/` は treeGrid の WBS で、`default.view.json` に計算列 `$expr:remaining`（`effort * (100 - progress) / 100`。残工数をスキーマに持たせず View で求める例）を含む。
 
 ## 13. MVP の対象外
 

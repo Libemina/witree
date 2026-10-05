@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:tsheet:meta:record:0.1",
   "title": "tsheet形式データレコード v0.1",
-  "description": "data.jsonl の1行。values の中身はワークブックの schema.json に従って検証する（仕様書 §12 の D 系診断）。",
+  "description": "data.jsonl の1行。values の中身はワークブックの schema.json に従って検証する（仕様書 §12 の D 系診断）。キー formulas は将来のレコード単位の数式用に予約しており（仕様書 §11・§15）、v0.1 では additionalProperties: false により拒否される（D01）。",
   "type": "object",
   "required": [
     "id",

@@ -309,8 +309,13 @@
         "$updatedBy"
       ]
     },
+    "exprColumnRef": {
+      "description": "計算列 $expr:<id>（View仕様 §6.4）。<id> は列の識別子",
+      "type": "string",
+      "pattern": "^\\$expr:[a-z][A-Za-z0-9_]{0,63}$"
+    },
     "columnRef": {
-      "description": "fieldRef、特殊列 $title / $type / $outline / $id、またはシステム項目の特殊列",
+      "description": "fieldRef、特殊列 $title / $type / $outline / $id、システム項目の特殊列、または計算列 $expr:<id>",
       "oneOf": [
         {
           "$ref": "#/$defs/fieldRef"
@@ -325,17 +330,23 @@
         },
         {
           "$ref": "#/$defs/systemColumn"
+        },
+        {
+          "$ref": "#/$defs/exprColumnRef"
         }
       ]
     },
     "sortRef": {
-      "description": "fieldRef、またはシステム項目の特殊列",
+      "description": "fieldRef、システム項目の特殊列、または同じ View の計算列 $expr:<id>",
       "oneOf": [
         {
           "$ref": "#/$defs/fieldRef"
         },
         {
           "$ref": "#/$defs/systemColumn"
+        },
+        {
+          "$ref": "#/$defs/exprColumnRef"
         }
       ]
     },
@@ -351,6 +362,10 @@
       "properties": {
         "field": {
           "$ref": "#/$defs/columnRef"
+        },
+        "expr": {
+          "$ref": "#/$defs/expression",
+          "description": "計算列（field が $expr:<id>）の式。各行のノードを文脈として評価する。計算列では必須、それ以外の列には指定できない"
         },
         "label": {
           "type": "string"
@@ -391,7 +406,26 @@
           "description": "見出しを式で計算する（root 参照・TODAY・FORMAT のみ利用可）。label より優先"
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "if": {
+        "properties": {
+          "field": {
+            "$ref": "#/$defs/exprColumnRef"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "expr"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "expr"
+          ]
+        }
+      }
     },
     "format": {
       "type": "object",
@@ -534,7 +568,14 @@
           "minItems": 1,
           "uniqueItems": true,
           "items": {
-            "$ref": "#/$defs/fieldRef"
+            "oneOf": [
+              {
+                "$ref": "#/$defs/fieldRef"
+              },
+              {
+                "$ref": "#/$defs/exprColumnRef"
+              }
+            ]
           }
         },
         "style": {
