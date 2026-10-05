@@ -1,0 +1,8 @@
+{
+  // 生成スクリプト。Node.js で実行するので Node の型を使う（src/ の決定性の制約は課さない）。
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["**/*.ts"]
+}

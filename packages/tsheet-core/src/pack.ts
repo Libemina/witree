@@ -33,6 +33,7 @@
 //  8. 規則 1 の正規化は、`pack` では各パートの内容にも適用する（CRLF → LF、先頭の BOM の除去）。
 //     単独の CR は改行として扱わず、そのまま残す。
 import type { Diagnostic, PartMap, PartPath, UnpackResult } from "./api.ts";
+import { compareCodePoints } from "./compare.ts";
 import { FORMAT_VERSION } from "./version.ts";
 
 const BOM = "﻿";
@@ -50,20 +51,6 @@ export type UnpackErrorReason =
   | "unknown-directive"
   | "content-outside-part"
   | "content-after-end";
-
-/** コードポイント順の比較（UTF-16 のコード単位順ではない。サロゲートペアで結果が変わる）。 */
-function compareCodePoints(a: string, b: string): number {
-  let i = 0;
-  let j = 0;
-  while (i < a.length && j < b.length) {
-    const ca = a.codePointAt(i) ?? 0;
-    const cb = b.codePointAt(j) ?? 0;
-    if (ca !== cb) return ca < cb ? -1 : 1;
-    i += ca > 0xffff ? 2 : 1;
-    j += cb > 0xffff ? 2 : 1;
-  }
-  return a.length - i - (b.length - j);
-}
 
 /** §2.2 規則 4 の順序での区分。順序に位置づけられないパスは -1。 */
 function partRank(path: PartPath): number {

@@ -9,6 +9,10 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit -p . && tsc --noEmit -p test"
+    "typecheck": "tsc --noEmit -p . && tsc --noEmit -p test && tsc --noEmit -p scripts",
+    "generate": "node --experimental-strip-types scripts/generate-meta-validators.ts"
+  },
+  "devDependencies": {
+    "ajv": "^8.20.0"
   }
 }
