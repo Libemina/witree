@@ -1,0 +1,110 @@
+{
+  "$schema": "../../meta/schema.v0.1.json",
+  "specVersion": "0.1",
+  "schemaVersion": 1,
+  "id": "wbs",
+  "title": "WBS",
+  "root": {
+    "children": {
+      "Task": {
+        "cardinality": "many"
+      }
+    }
+  },
+  "types": {
+    "Task": {
+      "label": "タスク",
+      "titleTemplate": "{wbs} {name}",
+      "maxDepth": 6,
+      "fields": {
+        "wbs": {
+          "type": "string",
+          "label": "WBS番号",
+          "formula": "OUTLINE()"
+        },
+        "name": {
+          "type": "string",
+          "label": "タスク名",
+          "required": true
+        },
+        "assignee": {
+          "type": "string",
+          "label": "担当"
+        },
+        "effort": {
+          "type": "number",
+          "label": "工数",
+          "min": 0,
+          "unit": "人日",
+          "rollup": {
+            "sourceType": "Task",
+            "sourceField": "effort",
+            "fn": "sum",
+            "whenNoSource": "input"
+          }
+        },
+        "start": {
+          "type": "date",
+          "label": "開始",
+          "rollup": {
+            "sourceType": "Task",
+            "sourceField": "start",
+            "fn": "min",
+            "whenNoSource": "input"
+          }
+        },
+        "end": {
+          "type": "date",
+          "label": "終了",
+          "rollup": {
+            "sourceType": "Task",
+            "sourceField": "end",
+            "fn": "max",
+            "whenNoSource": "input"
+          }
+        },
+        "progress": {
+          "type": "number",
+          "label": "進捗",
+          "min": 0,
+          "max": 100,
+          "unit": "%",
+          "rollup": {
+            "sourceType": "Task",
+            "sourceField": "progress",
+            "fn": "wavg",
+            "weight": "effort",
+            "whenNoSource": "input"
+          }
+        },
+        "days": {
+          "type": "number",
+          "label": "暦日数",
+          "integer": true,
+          "formula": "DAYS(end, start) + 1"
+        },
+        "dependsOn": {
+          "type": "ref",
+          "label": "先行タスク",
+          "target": [
+            "Task"
+          ],
+          "multiple": true,
+          "onDelete": "clear"
+        }
+      },
+      "children": {
+        "Task": {
+          "cardinality": "many"
+        }
+      },
+      "checks": [
+        {
+          "id": "dateOrder",
+          "expr": "end >= start",
+          "message": "終了日が開始日より前です"
+        }
+      ]
+    }
+  }
+}

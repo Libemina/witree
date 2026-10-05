@@ -1,0 +1,11 @@
+{
+  "$schema": "../../meta/workbook.v0.1.json",
+  "specVersion": "0.1",
+  "schema": "schema.json",
+  "data": "data.jsonl",
+  "views": [
+    "views/default.view.json"
+  ],
+  "docsDir": "docs",
+  "dataSchemaVersion": 1
+}
