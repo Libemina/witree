@@ -12,6 +12,7 @@
     "test": "vitest run \"--project=!*:browser\"",
     "test:watch": "vitest \"--project=!*:browser\"",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
+    "generate": "pnpm --filter tsheet-core run generate",
     "test:browser": "vitest run \"--project=*:browser\"",
     "browsers:install": "playwright install chromium firefox webkit"
   },

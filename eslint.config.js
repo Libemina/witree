@@ -21,7 +21,16 @@ const forbiddenGlobals = [
 
 export default defineConfig(
   {
-    ignores: ["**/node_modules/", "**/dist/", "**/build/", "**/coverage/", "**/target/", "test/fixtures/"],
+    ignores: [
+      "**/node_modules/",
+      "**/dist/",
+      "**/build/",
+      "**/coverage/",
+      "**/target/",
+      "test/fixtures/",
+      // Ajv standalone が生成した検証関数（pnpm generate）。禁止 API を含まないことは生成時とテストで確かめる。
+      "packages/tsheet-core/src/generated/",
+    ],
   },
   js.configs.recommended,
   tseslint.configs.strictTypeChecked,
@@ -51,7 +60,13 @@ export default defineConfig(
     },
   },
   {
-    files: ["eslint.config.js", "**/vitest.*config.ts", "test/**/*.ts", "packages/tsheet-cli/**/*.ts"],
+    files: [
+      "eslint.config.js",
+      "**/vitest.*config.ts",
+      "test/**/*.ts",
+      "packages/tsheet-cli/**/*.ts",
+      "packages/tsheet-core/scripts/**/*.ts",
+    ],
     languageOptions: { globals: globals.node },
   },
   {

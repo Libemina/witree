@@ -57,7 +57,11 @@ importers:
         specifier: workspace:*
         version: link:../tsheet-core
 
-  packages/tsheet-core: {}
+  packages/tsheet-core:
+    devDependencies:
+      ajv:
+        specifier: ^8.20.0
+        version: 8.20.0
 
 packages:
 

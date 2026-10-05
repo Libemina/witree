@@ -10,6 +10,7 @@ pnpm check        # lint → typecheck → test。PR の前に必ず通す
 pnpm lint | pnpm typecheck | pnpm test
 pnpm test:browser # tsheet-core のテストを Chromium・Firefox・WebKit で実行（初回は pnpm browsers:install）
 pnpm vitest run --project tsheet-core   # パッケージ単位（tsheet-core / tsheet-cli / witree / repo）
+pnpm generate     # meta/ のメタスキーマから検証関数を再生成（packages/tsheet-core/src/generated/ にコミットする。meta/ を変えたら実行）
 ```
 
 ## 構成
